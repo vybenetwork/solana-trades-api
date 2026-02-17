@@ -60,24 +60,51 @@ Then open **http://localhost:3000**. The UI shows **historical trade data** for 
 
 The included web app is a **Solana historical trade data** viewer with **transaction export**: enter a token mint and optional time range to load **historical trade data** (paginated); view trades in a table (timestamp, price, size, market, signature); **transaction export** to CSV from the browser; and optionally overlay candle data for the same period. All **historical trade data** and **transaction export** use the Vybe **Solana trade history API** in the browser.
 
-## Solana Endpoints Used
+## API base and auth
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /v4/trades` | Historical trade data (pagination: limit, page; filter by token, time); use for transaction export |
-| `GET /v4/tokens/{mintAddress}/candles` | OHLC for price context around the same period |
+- **Base URL:** `https://api.vybenetwork.xyz`
+- **Headers:** `X-API-KEY: <your-api-key>`, `Accept: application/json`
+
+## Solana endpoints and parameters
+
+### 1. Historical trades
+
+**`GET /v4/trades`** — Historical trade data with pagination; use for transaction export or backfill.
+
+| Type | Name | Required | Description |
+|------|------|----------|-------------|
+| Query | `tokenMintAddress` | No | Filter by base token mint (base58) |
+| Query | `limit` | No | Number of trades per page (default/max may vary, e.g. 1000) |
+| Query | `page` | No | Page index for pagination (0-based) |
+| Query | `timeStart` | No | Start time (Unix seconds) |
+| Query | `timeEnd` | No | End time (Unix seconds) |
+| Query | `marketId` | No | Filter by market address |
+| Query | `programAddress` | No | Filter by DEX program ID |
+
+### 2. Token OHLC candles
+
+**`GET /v4/tokens/{mintAddress}/candles`** — OHLC for price context around the same period.
+
+| Type | Name | Required | Description |
+|------|------|----------|-------------|
+| Path | `mintAddress` | Yes | Token mint (base58) |
+| Query | `resolution` | No | `1m`, `5m`, `15m`, `1h`, `4h`, `1d`, `1w`, `1y` |
+| Query | `limit` | No | Number of candles |
+| Query | `timeStart` | No | Start time (Unix seconds) |
+| Query | `timeEnd` | No | End time (Unix seconds) |
+| Query | `eliminateCloseToOpenGaps` | No | Boolean |
 
 - [Historical Trades](https://docs.vybenetwork.com/reference/get_trades_v4)
 - [Fetch OHLC Candles](https://docs.vybenetwork.com/docs/fetch-ohlc-candles)
 
-## Code Example
+## Code example
 
 ```javascript
 const axios = require('axios');
 const fs = require('fs');
 
-const API = 'https://api.vybenetwork.com';
-const headers = { 'X-API-Key': process.env.VYBE_API_KEY };
+const API = 'https://api.vybenetwork.xyz';
+const headers = { 'X-API-KEY': process.env.VYBE_API_KEY, 'Accept': 'application/json' };
 
 // 1) Historical trade data with pagination (for transaction export)
 async function fetchAllTrades(tokenMintAddress) {

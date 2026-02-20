@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solana Historical Trade Data</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Historical Trade Data</h1>
+        <p class="subtitle">Solana trade history via Vybe API — filters + CSV export</p>
+      </header>
+
+      <section class="inputs panel">
+        <div class="field">
+          <label for="mintAddress">Token mint (either side)</label>
+          <div class="field-control">
+            <span class="field-icon icon-tag" aria-hidden="true"></span>
+            <input
+              type="text"
+              id="mintAddress"
+              placeholder="e.g. DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="timeStart">Start time</label>
+          <div class="field-control">
+            <span class="field-icon icon-clock" aria-hidden="true"></span>
+            <input type="datetime-local" id="timeStart" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="timeEnd">End time</label>
+          <div class="field-control">
+            <span class="field-icon icon-clock" aria-hidden="true"></span>
+            <input type="datetime-local" id="timeEnd" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="limit">Limit</label>
+          <div class="field-control">
+            <span class="field-icon icon-hash" aria-hidden="true"></span>
+            <select id="limit">
+              <option value="100">100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+              <option value="1000" selected>1000</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="sort">Sort</label>
+          <div class="field-control">
+            <span class="field-icon icon-sort" aria-hidden="true"></span>
+            <select id="sort">
+              <option value="blockTime:desc" selected>blockTime desc</option>
+              <option value="blockTime:asc">blockTime asc</option>
+              <option value="price:desc">price desc</option>
+              <option value="price:asc">price asc</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Page(s)</label>
+          <div class="page-range">
+            <div class="field-control">
+              <span class="field-icon icon-pages" aria-hidden="true"></span>
+              <input type="number" id="pageFrom" min="0" step="1" value="0" />
+            </div>
+            <span class="page-range-sep">to</span>
+            <div class="field-control">
+              <span class="field-icon icon-pages" aria-hidden="true"></span>
+              <input type="number" id="pageTo" min="0" step="1" placeholder="-" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="maxPages">Export max pages</label>
+          <div class="field-control">
+            <span class="field-icon icon-download" aria-hidden="true"></span>
+            <input type="number" id="maxPages" min="1" step="1" value="50" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="fetchBtn">Fetch trades</button>
+          <button type="button" id="exportBtn" disabled>Export current page CSV</button>
+          <button type="button" id="exportAllBtn" disabled>Export paginated CSV</button>
+          <div class="loading" id="loadingIndicator" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
+        </div>
+
+        <details class="advanced" id="advancedDetails">
+          <summary>Advanced filters (Vybe params)</summary>
+          <div class="advanced-grid">
+            <div class="field">
+              <label for="baseMintAddress">baseMintAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-tag" aria-hidden="true"></span>
+                <input type="text" id="baseMintAddress" placeholder="base token mint" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="quoteMintAddress">quoteMintAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-tag" aria-hidden="true"></span>
+                <input type="text" id="quoteMintAddress" placeholder="quote token mint" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="marketAddress">marketAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-link" aria-hidden="true"></span>
+                <input type="text" id="marketAddress" placeholder="market/pool address" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="programAddress">programAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-link" aria-hidden="true"></span>
+                <input type="text" id="programAddress" placeholder="DEX program id" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="authorityAddress">authorityAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-user" aria-hidden="true"></span>
+                <input type="text" id="authorityAddress" placeholder="authority pubkey" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="feePayerAddress">feePayerAddress</label>
+              <div class="field-control">
+                <span class="field-icon icon-user" aria-hidden="true"></span>
+                <input type="text" id="feePayerAddress" placeholder="fee payer pubkey" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="resolution">resolution</label>
+              <div class="field-control">
+                <span class="field-icon icon-grid" aria-hidden="true"></span>
+                <input type="text" id="resolution" placeholder="(deprecated) e.g. 1h, 1d" />
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel" id="tokenSection">
+        <div class="section-header">
+          <h2>Token metadata</h2>
+          <div class="section-loading" id="tokenLoading" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
+          <span class="section-error" id="tokenError" hidden aria-hidden="true"></span>
+        </div>
+        <div class="token-meta-header">
+          <img id="tokenLogo" alt="" class="token-logo" style="display:none" />
+          <div>
+            <div class="token-title">
+              <span id="tokenSymbol" class="token-symbol">—</span>
+              <span id="tokenName" class="token-name">—</span>
+            </div>
+            <div class="token-subtitle">
+              <span class="token-subtitle-label">Mint:</span>
+              <span id="tokenMint">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="token-meta-grid" id="tokenMetaGrid">
+          <div class="token-meta-item"><span class="token-meta-label">Verified</span><span id="tokenVerified">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">Category</span><span id="tokenCategory">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">Decimals</span><span id="tokenDecimals">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">Price (USD)</span><span id="tokenPriceUsd">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">Market cap (USD)</span><span id="tokenMarketCapUsd">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">24h volume (USD)</span><span id="tokenVolume24hUsd">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">24h volume (token)</span><span id="tokenVolume24hToken">—</span></div>
+          <div class="token-meta-item"><span class="token-meta-label">Last updated</span><span id="tokenUpdateTime">—</span></div>
+        </div>
+      </section>
+
+      <section class="panel" id="summarySection">
+        <div class="section-header">
+          <h2 id="summaryTitle">Trades summary</h2>
+          <div class="section-loading" id="summaryLoading" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
+          <span class="section-error" id="summaryError" hidden aria-hidden="true"></span>
+        </div>
+        <p class="meta" id="summaryMeta">—</p>
+        <div class="summary-grid">
+          <div class="summary-box">
+            <h3>Programs (top 5)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left">Program</th>
+                    <th style="text-align:right">Count</th>
+                  </tr>
+                </thead>
+                <tbody id="topProgramsBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="summary-box">
+            <h3>Pools / markets (top 5)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left">Market</th>
+                    <th style="text-align:left">Pair</th>
+                    <th style="text-align:right">Count</th>
+                  </tr>
+                </thead>
+                <tbody id="topMarketsBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="summary-box">
+            <h3>Quote mints (top 5)</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left">Symbol</th>
+                    <th style="text-align:left">Mint</th>
+                    <th style="text-align:right">Count</th>
+                  </tr>
+                </thead>
+                <tbody id="topQuotesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel local-filters-panel">
+        <div class="section-header">
+          <h2>Local filters (no refetch)</h2>
+        </div>
+        <div class="local-filters">
+          <div class="field">
+            <label for="search">Search (signature/market/program/authority/fee payer)</label>
+            <div class="field-control">
+              <span class="field-icon icon-search" aria-hidden="true"></span>
+              <input type="text" id="search" placeholder="e.g. 5KJp… or Raydium program id" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="localMarket">Market contains</label>
+            <div class="field-control">
+              <span class="field-icon icon-link" aria-hidden="true"></span>
+              <input type="text" id="localMarket" placeholder="market/pool address substring" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="localProgram">Program contains</label>
+            <div class="field-control">
+              <span class="field-icon icon-link" aria-hidden="true"></span>
+              <input type="text" id="localProgram" placeholder="DEX program id substring" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="minPrice">Min price</label>
+            <div class="field-control">
+              <span class="field-icon icon-dollar" aria-hidden="true"></span>
+              <input type="number" id="minPrice" step="any" placeholder="0" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="minBaseSize">Min baseSize</label>
+            <div class="field-control">
+              <span class="field-icon icon-scale" aria-hidden="true"></span>
+              <input type="number" id="minBaseSize" step="any" placeholder="0" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="minQuoteSize">Min quoteSize</label>
+            <div class="field-control">
+              <span class="field-icon icon-scale" aria-hidden="true"></span>
+              <input type="number" id="minQuoteSize" step="any" placeholder="0" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-header">
+          <h2>Trades</h2>
+          <span class="section-error" id="tradesError" hidden aria-hidden="true"></span>
+        </div>
+        <p class="meta" id="tradesMeta">—</p>
+        <div class="table-wrap table-wrap--scroll">
+          <table id="tradesTable">
+            <thead>
+              <tr>
+                <th style="text-align:left">Time</th>
+                <th style="text-align:right">Price</th>
+                <th style="text-align:right">Base size</th>
+                <th style="text-align:right">Quote size</th>
+                <th style="text-align:left">Market</th>
+                <th style="text-align:left">Program</th>
+                <th style="text-align:left">Signature</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+

@@ -22,7 +22,7 @@ Use this demo for **backtesting**, **tax reporting**, or any app that needs **So
 **Get a free Vybe API key** (required to run this demo):
 
 **[Get your free Vybe API key →](https://vybenetwork.com/pricing?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**  
-**[Vybe API documentation →](https://docs.vybenetwork.com/reference/get_trades_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**
+**[Vybe API documentation →](https://docs.vybenetwork.com/reference/get_trade_data_program_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**
 
 ---
 
@@ -30,7 +30,7 @@ Use this demo for **backtesting**, **tax reporting**, or any app that needs **So
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/your-org/solana-historical-trade-data-api.git
+git clone https://github.com/vybenetwork/solana-historical-trade-data-api.git
 cd solana-historical-trade-data-api
 ```
 
@@ -45,20 +45,24 @@ cp .env.example .env
 # Edit .env and add your VYBE_API_KEY
 ```
 
-4. Run the demo (CLI):
+4. Run the server + web app:
 ```bash
 npm start
 ```
-
-5. Run the web app (GUI):
-```bash
-npm run dev
-```
-Then open **http://localhost:3000**. The UI shows **historical trade data** for a token in a table, with filters and an **Export to CSV** (**transaction export**) button.
+Then open **http://localhost:3000**. The UI shows **historical trade data** for a token in a table, with filters and **transaction export** to CSV (paginated).
 
 ## Web App / GUI
 
-The included web app is a **Solana historical trade data** viewer with **transaction export**: enter a token mint and optional time range to load **historical trade data** (paginated); view trades in a table (timestamp, price, size, market, signature); **transaction export** to CSV from the browser; and optionally overlay candle data for the same period. All **historical trade data** and **transaction export** use the Vybe **Solana trade history API** in the browser.
+The included web app is a **Solana historical trade data** viewer with **transaction export**:
+
+- Remote filters (Vybe query params): basic inputs + an **Advanced** section exposing the full `/v4/trades` param set.
+- Local filters (no refetch): refine the loaded results in-browser (search, min price/size, market/program contains).
+- Trades table: timestamp, price, sizes, market, program, signature (links open in Solscan).
+- CSV export:
+  - Export the current page.
+  - Export across pages (paginated) up to a configurable max pages.
+
+All trade data is fetched from vetted markets via the Vybe **trade history** endpoint (`GET /v4/trades`).
 
 ## API base and auth
 
@@ -73,13 +77,20 @@ The included web app is a **Solana historical trade data** viewer with **transac
 
 | Type | Name | Required | Description |
 |------|------|----------|-------------|
-| Query | `tokenMintAddress` | No | Filter by base token mint (base58) |
-| Query | `limit` | No | Number of trades per page (default/max may vary, e.g. 1000) |
-| Query | `page` | No | Page index for pagination (0-based) |
+| Query | `programAddress` | No | Filter by DEX program ID |
+| Query | `baseMintAddress` | No | Filter by base token mint |
+| Query | `quoteMintAddress` | No | Filter by quote token mint |
+| Query | `mintAddress` | No | Filter by either base or quote token mint |
+| Query | `marketAddress` | No | Filter by market/pool address (when set, base/quote mints are ignored) |
+| Query | `authorityAddress` | No | Filter by authority public key |
+| Query | `feePayerAddress` | No | Filter by fee payer public key |
 | Query | `timeStart` | No | Start time (Unix seconds) |
 | Query | `timeEnd` | No | End time (Unix seconds) |
-| Query | `marketId` | No | Filter by market address |
-| Query | `programAddress` | No | Filter by DEX program ID |
+| Query | `page` | No | Page index (0-based) |
+| Query | `limit` | No | Trades per page (default/max 1000) |
+| Query | `sortByAsc` | No | Sort ascending by `price` or `blockTime` |
+| Query | `sortByDesc` | No | Sort descending by `price` or `blockTime` |
+| Query | `resolution` | No | Deprecated/optional per docs (kept for completeness) |
 
 ### 2. Token OHLC candles
 
@@ -88,55 +99,56 @@ The included web app is a **Solana historical trade data** viewer with **transac
 | Type | Name | Required | Description |
 |------|------|----------|-------------|
 | Path | `mintAddress` | Yes | Token mint (base58) |
-| Query | `resolution` | No | `1m`, `5m`, `15m`, `1h`, `4h`, `1d`, `1w`, `1y` |
-| Query | `limit` | No | Number of candles |
-| Query | `timeStart` | No | Start time (Unix seconds) |
-| Query | `timeEnd` | No | End time (Unix seconds) |
-| Query | `eliminateCloseToOpenGaps` | No | Boolean |
+| Query | `resolution` | No | Candle size: `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `3h`, `4h`, `1d`, `1w`, `1mo`, `1y` (default `1h`) |
+| Query | `timeStart` | No | Start time (Unix seconds). Default: 2 weeks ago |
+| Query | `timeEnd` | No | End time (Unix seconds). Default: now |
+| Query | `limit` | No | Max candles per page (default 1000) |
+| Query | `page` | No | Page for pagination (0-indexed) |
+| Query | `eliminateCloseToOpenGaps` | No | Boolean (default `true`) |
 
-- [Historical Trades](https://docs.vybenetwork.com/reference/get_trades_v4)
+- [Historical Trades](https://docs.vybenetwork.com/reference/get_trade_data_program_v4)
 - [Fetch OHLC Candles](https://docs.vybenetwork.com/docs/fetch-ohlc-candles)
 
 ## Code example
 
-```javascript
-const axios = require('axios');
-const fs = require('fs');
+```typescript
+import axios from 'axios';
+import fs from 'node:fs';
 
 const API = 'https://api.vybenetwork.xyz';
-const headers = { 'X-API-KEY': process.env.VYBE_API_KEY, 'Accept': 'application/json' };
+const headers = { 'X-API-KEY': process.env.VYBE_API_KEY, Accept: 'application/json' };
 
-// 1) Historical trade data with pagination (for transaction export)
-async function fetchAllTrades(tokenMintAddress) {
+type Trade = {
+  blockTime: number;
+  price: string;
+  baseSize: string;
+  quoteSize: string;
+  marketAddress: string;
+  signature: string;
+};
+
+async function fetchAllTrades(baseMintAddress: string) {
   let page = 0;
-  let all = [];
-  let chunk;
-  do {
-    const { data } = await axios.get(`${API}/v4/trades`, {
-      params: { tokenMintAddress, limit: 1000, page },
-      headers
+  const limit = 1000;
+  const all: Trade[] = [];
+  while (true) {
+    const { data } = await axios.get<{ data: Trade[] }>(`${API}/v4/trades`, {
+      params: { baseMintAddress, limit, page, sortByDesc: 'blockTime' },
+      headers,
     });
-    chunk = data.data || [];
-    all = all.concat(chunk);
+    const chunk = data.data || [];
+    all.push(...chunk);
+    if (chunk.length < limit) break;
     page++;
-  } while (chunk.length === 1000);
+  }
   return all;
 }
 
-// 2) Token candles for same period (price context)
-async function getCandles(mintAddress, timeStart, timeEnd) {
-  const { data } = await axios.get(
-    `${API}/v4/tokens/${mintAddress}/candles`,
-    { params: { resolution: '1h', timeStart, timeEnd, limit: 500 }, headers }
-  );
-  return data;
-}
-
 const tokenMint = 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263';
-fetchAllTrades(tokenMint).then(trades => {
-  const csv = ['timestamp,price,size,marketId,signature']
-    .concat(trades.map(t => [t.blockTime, t.price, t.baseSize, t.marketId, t.signature].join(',')))
-    .join('\n');
+fetchAllTrades(tokenMint).then((trades) => {
+  const csv = ['blockTime,price,baseSize,quoteSize,marketAddress,signature']
+    .concat(trades.map((t) => [t.blockTime, t.price, t.baseSize, t.quoteSize, t.marketAddress, t.signature].join(',')))
+    .join('\\n');
   fs.writeFileSync('trades.csv', csv);
   console.log('Transaction export: %s trades', trades.length);
 });
@@ -146,7 +158,7 @@ fetchAllTrades(tokenMint).then(trades => {
 
 CSV (**transaction export**):
 ```csv
-timestamp,price,size,marketId,signature
+blockTime,price,baseSize,quoteSize,marketAddress,signature
 1769454000,0.00001234,1000000,ABC123...,5KJp...
 1769454100,0.00001245,500000,ABC123...,7MNq...
 ```

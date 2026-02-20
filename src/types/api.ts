@@ -65,9 +65,20 @@ export interface VybeTradesResponse {
   [key: string]: unknown;
 }
 
-/** Programs response from GET /v4/programs */
+/** Single program from GET /v4/programs/labeled-program-accounts */
+export interface VybeLabeledProgram {
+  programAddress: string;
+  name?: string;
+  labels?: string[];
+  label?: string;
+  symbol?: string;
+  [key: string]: unknown;
+}
+
+/** Response from GET /v4/programs/labeled-program-accounts (uses programs, not data) */
 export interface VybeProgramsResponse {
-  data: Array<{ programAddress: string; label?: string; [key: string]: unknown }>;
+  programs?: VybeLabeledProgram[];
+  data?: VybeLabeledProgram[];
   [key: string]: unknown;
 }
 

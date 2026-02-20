@@ -116,7 +116,7 @@ const quoteSymbolCache: Record<string, string> = {};
 
 const STABLE_QUOTE_SYMBOLS = new Set(['USD', 'USDC', 'USDT', 'PYUSD', 'USD1']);
 
-/** Well-known DEX program IDs → label (used when /api/programs has no match). */
+/** Well-known DEX program IDs → label (used when labeled-program-account has no match). */
 const WELL_KNOWN_PROGRAMS: Record<string, string> = {
   '675kPX9MHTjS2zt1qwr1sgbV5tjF6n5paF8GcaxHfL8r': 'Raydium',
   '9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP': 'Orca',
@@ -128,9 +128,12 @@ const WELL_KNOWN_PROGRAMS: Record<string, string> = {
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'Jupiter',
 };
 
-interface ProgramsResponse {
-  data?: { id?: string; address?: string; programAddress?: string; name?: string; label?: string; symbol?: string }[];
-  programs?: { id?: string; address?: string; programAddress?: string; name?: string; label?: string; symbol?: string }[];
+interface ProgramItem {
+  programAddress?: string;
+  name?: string;
+  label?: string;
+  labels?: string[];
+  symbol?: string;
 }
 
 function showInlineError(el: HTMLElement, msg: string): void {
@@ -495,9 +498,9 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     }
   });
 
-  const topMarketsWithPair = Object.entries(marketCount)
+  const topMarketsRaw = Object.entries(marketCount)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
+    .slice(0, 20)
     .map(([addr, count]) => {
       const quoteCounts = marketQuoteCount[addr] ?? {};
       const bestQuoteMint =
@@ -506,28 +509,39 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     });
 
   const programs = topCounts(trades.map((t) => t.programAddress), 5);
-  const quotes = topCounts(trades.map((t) => t.quoteMintAddress), 5);
+  const quotesRaw = topCounts(trades.map((t) => t.quoteMintAddress), 20);
 
-  let programLabels: Record<string, string> = {};
-  try {
-    const progRes = await fetchWithRetry('/api/programs');
-    const progBody = (await progRes.json().catch(() => ({}))) as ProgramsResponse;
-    const list = progBody.data ?? progBody.programs ?? [];
-    if (Array.isArray(list)) {
-      list.forEach((p) => {
-        const id = (p.id ?? p.address ?? p.programAddress ?? '').trim();
-        const name = (p.name ?? p.label ?? p.symbol ?? '').trim();
-        if (id && name) programLabels[id] = name;
+  const programLabels: Record<string, string> = {};
+  programs.forEach((p) => {
+    programLabels[p.key] = WELL_KNOWN_PROGRAMS[p.key] ?? p.key;
+  });
+  const needLabel = programs.filter((p) => !WELL_KNOWN_PROGRAMS[p.key]);
+  async function runQueue<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>): Promise<void> {
+    const executing: Promise<void>[] = [];
+    for (const item of items) {
+      const p = fn(item).then(() => {
+        executing.splice(executing.indexOf(p), 1);
       });
+      executing.push(p);
+      if (executing.length >= concurrency) await Promise.race(executing);
     }
-    programs.forEach((p) => {
-      if (!programLabels[p.key]) programLabels[p.key] = WELL_KNOWN_PROGRAMS[p.key] ?? p.key;
-    });
-  } catch {
-    programs.forEach((p) => {
-      programLabels[p.key] = WELL_KNOWN_PROGRAMS[p.key] ?? p.key;
-    });
+    await Promise.all(executing);
   }
+  await runQueue(needLabel.map((p) => p.key), 2, async (programAddress) => {
+    try {
+      const url = `/api/programs/labeled-program-account?programAddress=${encodeURIComponent(programAddress)}`;
+      const r = await fetchWithRetry(url);
+      if (!r.ok) return;
+      const body = (await r.json().catch(() => ({}))) as { programs?: ProgramItem[] };
+      const list = body.programs ?? [];
+      const p = list[0];
+      if (!p) return;
+      const name = p.name ?? p.label ?? p.symbol ?? (Array.isArray(p.labels) && p.labels[0]);
+      if (name) programLabels[programAddress] = name;
+    } catch {
+      // keep WELL_KNOWN or address fallback
+    }
+  });
 
   const baseSymbol = (lastBaseSymbol ?? '').toUpperCase() || '—';
 
@@ -535,7 +549,8 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     ? programs
         .map((p) => {
           const link = solscanLinkAccount(p.key, truncate(p.key, 5, 4));
-          const label = programLabels[p.key];
+          const rawLabel = programLabels[p.key];
+          const label = rawLabel && rawLabel.length > 19 ? rawLabel.slice(0, 19) + '...' : rawLabel;
           const labelSuffix = label && label !== p.key ? ` (${label})` : '';
           return `<tr><td>${link}${labelSuffix}</td><td style="text-align:right">${p.count}</td></tr>`;
         })
@@ -543,29 +558,43 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     : '<tr><td>—</td><td style="text-align:right">—</td></tr>';
 
   const pairQuoteSymbols: Record<string, string> = { ...quoteSymbolCache };
-  for (const { bestQuoteMint } of topMarketsWithPair) {
+  for (const { bestQuoteMint } of topMarketsRaw) {
     if (bestQuoteMint && !pairQuoteSymbols[bestQuoteMint]) {
       const s = await fetchSymbol(bestQuoteMint);
       if (s) pairQuoteSymbols[bestQuoteMint] = s;
     }
   }
 
+  const topMarketsWithPair = topMarketsRaw
+    .map(({ marketAddress, count, bestQuoteMint }) => {
+      const quoteSym = bestQuoteMint ? (pairQuoteSymbols[bestQuoteMint] ?? truncate(bestQuoteMint, 4, 4)) : '—';
+      const pairDisplay = bestQuoteMint ? `${baseSymbol} / ${quoteSym}` : '—';
+      return { marketAddress, count, pairDisplay };
+    })
+    .filter((m) => m.pairDisplay !== '—')
+    .slice(0, 5);
+
   topMarketsBody.innerHTML = topMarketsWithPair.length
     ? topMarketsWithPair
-        .map(({ marketAddress, count, bestQuoteMint }) => {
+        .map(({ marketAddress, count, pairDisplay }) => {
           const marketLink = solscanLinkAccount(marketAddress, truncate(marketAddress, 4, 4));
-          const quoteSym = bestQuoteMint ? (pairQuoteSymbols[bestQuoteMint] ?? truncate(bestQuoteMint, 4, 4)) : '—';
-          const pairDisplay = bestQuoteMint ? `${baseSymbol} / ${quoteSym}` : '—';
           return `<tr><td>${marketLink}</td><td>${pairDisplay}</td><td style="text-align:right">${count}</td></tr>`;
         })
         .join('')
     : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
 
   const symbols: Record<string, string> = {};
-  for (const q of quotes) {
+  for (const q of quotesRaw) {
     const s = await fetchSymbol(q.key);
     if (s) symbols[q.key] = s;
   }
+
+  const quotes = quotesRaw
+    .filter((q) => {
+      const sym = symbols[q.key] ?? '—';
+      return sym !== '—' && sym.trim() !== '';
+    })
+    .slice(0, 5);
 
   topQuotesBody.innerHTML = quotes.length
     ? quotes

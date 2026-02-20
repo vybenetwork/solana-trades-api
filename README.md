@@ -55,14 +55,24 @@ Then open **http://localhost:3000**. The UI shows **historical trade data** for 
 
 The included web app is a **Solana historical trade data** viewer with **transaction export**:
 
+- **Token mint** — Default value on load: `DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263` (BONK). You can change it to any token.
 - Remote filters (Vybe query params): basic inputs + an **Advanced** section exposing the full `/v4/trades` param set.
 - Local filters (no refetch): refine the loaded results in-browser (search, min price/size, market/program contains).
-- Trades table: timestamp, price, sizes, market, program, signature (links open in Solscan).
+- **Trades summary** (from last fetch): **Programs (top 5)** with labels from well-known map or `GET /v4/programs/labeled-program-accounts` per address (queued, concurrency 2); **Pools / markets (top 5)** with Market, Pair (base/quote), Count — rows with unresolved pair (`—`) are omitted and the next market is shown; **Quote mints (top 5)** — rows with unresolved symbol (`—`) are omitted.
+- Trades table: timestamp, price, sizes, market, program, signature (links open in Solscan). Program labels longer than 19 characters are truncated to 19 characters plus `...`.
 - CSV export:
   - Export the current page.
   - Export across pages (paginated) up to a configurable max pages.
 
-All trade data is fetched from vetted markets via the Vybe **trade history** endpoint (`GET /v4/trades`).
+All trade data is fetched from vetted markets via the Vybe **trade history** endpoint (`GET /v4/trades`). Program labels use **`GET /v4/programs/labeled-program-accounts?programAddress=...`** (one request per program address for top programs not in the well-known map).
+
+## Server proxy routes
+
+The demo server exposes:
+
+- **`GET /api/trades`** — Proxies to Vybe `GET /v4/trades` with the same query params.
+- **`GET /api/programs/labeled-program-account?programAddress=...`** — Proxies to Vybe `GET /v4/programs/labeled-program-accounts?programAddress=...` (one request per program address; used by the UI for program labels not in the well-known map).
+- **`GET /api/tokens/:mint`** — Token details; **`GET /api/token-symbol/:mint`** — Symbol only.
 
 ## API base and auth
 

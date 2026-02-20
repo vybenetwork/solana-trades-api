@@ -116,6 +116,13 @@ const quoteSymbolCache: Record<string, string> = {};
 
 const STABLE_QUOTE_SYMBOLS = new Set(['USD', 'USDC', 'USDT', 'PYUSD', 'USD1']);
 
+/** Hardcoded mint → symbol; never fetch these from API. */
+const HARDCODED_QUOTE_MINTS: Record<string, string> = {
+  So11111111111111111111111111111111111111112: 'wSOL',
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 'USDC',
+  Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT',
+};
+
 /** Well-known DEX program IDs → label (used when labeled-program-account has no match). */
 const WELL_KNOWN_PROGRAMS: Record<string, string> = {
   '675kPX9MHTjS2zt1qwr1sgbV5tjF6n5paF8GcaxHfL8r': 'Raydium',
@@ -315,7 +322,8 @@ function buildTradesQueryForTable(pageOverride?: number): string {
 
 function buildTradesQueryForSummary(): string {
   const params = buildTradesParamsBase();
-  params.set('limit', '1000');
+  const limit = Number(limitSelect.value);
+  if (Number.isFinite(limit)) params.set('limit', String(limit));
   params.set('page', '0');
   params.set('sortByDesc', 'blockTime');
   params.delete('sortByAsc');
@@ -460,11 +468,18 @@ async function fetchTokenMeta(mint: string): Promise<void> {
 }
 
 async function fetchSymbol(mint: string): Promise<string | undefined> {
+  const hardcoded = HARDCODED_QUOTE_MINTS[mint];
+  if (hardcoded) {
+    quoteSymbolCache[mint] = hardcoded;
+    return hardcoded;
+  }
+  if (quoteSymbolCache[mint]) return quoteSymbolCache[mint];
   const res = await fetchWithRetry(`/api/token-symbol/${encodeURIComponent(mint)}`);
   const body = (await res.json().catch(() => ({}))) as TokenSymbolResponse;
   if (!res.ok) return undefined;
   const s = (body.symbol ?? '').trim();
   if (!s || s === mint) return undefined;
+  quoteSymbolCache[mint] = s;
   return s;
 }
 
@@ -561,7 +576,10 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   for (const { bestQuoteMint } of topMarketsRaw) {
     if (bestQuoteMint && !pairQuoteSymbols[bestQuoteMint]) {
       const s = await fetchSymbol(bestQuoteMint);
-      if (s) pairQuoteSymbols[bestQuoteMint] = s;
+      if (s) {
+        pairQuoteSymbols[bestQuoteMint] = s;
+        quoteSymbolCache[bestQuoteMint] = s;
+      }
     }
   }
 
@@ -584,17 +602,16 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
 
   const symbols: Record<string, string> = {};
+  const quotes: { key: string; count: number }[] = [];
   for (const q of quotesRaw) {
+    if (quotes.length >= 5) break;
     const s = await fetchSymbol(q.key);
-    if (s) symbols[q.key] = s;
+    if (s && s.trim() !== '') {
+      symbols[q.key] = s;
+      quoteSymbolCache[q.key] = s;
+      quotes.push(q);
+    }
   }
-
-  const quotes = quotesRaw
-    .filter((q) => {
-      const sym = symbols[q.key] ?? '—';
-      return sym !== '—' && sym.trim() !== '';
-    })
-    .slice(0, 5);
 
   topQuotesBody.innerHTML = quotes.length
     ? quotes
@@ -727,7 +744,7 @@ async function onFetch(): Promise<void> {
     // Fire-and-forget token metadata; should not block trades table.
     void fetchTokenMeta(mint);
 
-    // Fetch last 1000 trades (for summary boxes).
+    // Fetch trades for summary boxes (same limit as UI).
     summaryLoading.hidden = false;
     summaryLoading.setAttribute('aria-hidden', 'false');
     const summaryQuery = buildTradesQueryForSummary();
@@ -747,29 +764,35 @@ async function onFetch(): Promise<void> {
     summaryLoading.hidden = true;
     summaryLoading.setAttribute('aria-hidden', 'true');
 
-    // Fetch trades for the main table:
-    // - If "to" is unset: fetch a single page (pageFrom).
-    // - If "to" is set: fetch pages [pageFrom, pageTo) (end-exclusive).
     const pageFrom = parseIntOrUndefined(pageFromInput.value) ?? 0;
     const pageTo = parseIntOrUndefined(pageToInput.value);
     const pages =
       pageTo != null && pageTo > pageFrom ? Array.from({ length: pageTo - pageFrom }, (_, i) => pageFrom + i) : [pageFrom];
 
-    const allTrades: VybeTrade[] = [];
-    for (const p of pages) {
-      const query = buildTradesQueryForTable(p);
-      const url = `/api/trades?${query}`;
-      const res = await fetchWithRetry(url);
-      const body = (await res.json().catch(() => ({}))) as TradesResponse & { error?: string };
-      if (!res.ok) {
-        showError(body.error || `Failed (${res.status})`);
-        lastRemoteTrades = [];
-        lastFilteredTrades = [];
-        renderTrades([], { remoteCount: 0, filteredCount: 0, query });
-        return;
+    let allTrades: VybeTrade[];
+    const singlePage0 = pages.length === 1 && pages[0] === 0;
+    const sortIsBlockTimeDesc = (sortSelect.value || 'blockTime:desc') === 'blockTime:desc';
+    const canReuseSummary = summaryRes.ok && singlePage0 && sortIsBlockTimeDesc;
+
+    if (canReuseSummary) {
+      allTrades = summaryTrades;
+    } else {
+      allTrades = [];
+      for (const p of pages) {
+        const query = buildTradesQueryForTable(p);
+        const url = `/api/trades?${query}`;
+        const res = await fetchWithRetry(url);
+        const body = (await res.json().catch(() => ({}))) as TradesResponse & { error?: string };
+        if (!res.ok) {
+          showError(body.error || `Failed (${res.status})`);
+          lastRemoteTrades = [];
+          lastFilteredTrades = [];
+          renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
+          return;
+        }
+        const chunk = Array.isArray(body.data) ? body.data : [];
+        allTrades.push(...chunk);
       }
-      const chunk = Array.isArray(body.data) ? body.data : [];
-      allTrades.push(...chunk);
     }
 
     lastRemoteTrades = allTrades;

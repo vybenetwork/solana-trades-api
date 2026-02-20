@@ -15,3 +15,6 @@ public/app.js
 # Stray file
 npm
 
+# Persistent caches (read/write at request time)
+data/
+

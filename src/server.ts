@@ -7,6 +7,12 @@ import { loadEnv, getApiKey, PUBLIC_DIR } from './config.js';
 import { createClient } from './api/index.js';
 import { toHumanReadableError } from './api/client.js';
 import type { GetTradesParams, TradesSortField } from './api/trades.js';
+import {
+  readSymbolCacheFromDisk,
+  writeSymbolCacheToDisk,
+  readProgramCacheFromDisk,
+  writeProgramCacheToDisk,
+} from './cache.js';
 
 loadEnv();
 const apiKey = getApiKey();
@@ -52,9 +58,14 @@ app.get('/api/token-symbol/:mint', async (req: Request, res: Response) => {
     const rawMint = req.params.mint;
     const mint = (Array.isArray(rawMint) ? rawMint[0] : rawMint ?? '').trim();
     if (!mint) return res.status(400).json({ error: 'Mint address required' });
+    const cache = readSymbolCacheFromDisk();
+    if (cache[mint] != null) return res.json({ symbol: cache[mint] });
     const token = await client.getToken(mint);
     const symbol = (token.symbol ?? '').trim();
-    res.json({ symbol: symbol || mint });
+    const out = symbol || mint;
+    cache[mint] = out;
+    writeSymbolCacheToDisk(cache);
+    res.json({ symbol: out });
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
     res.status(status).json({ error: toHumanReadableError(err), symbol: Array.isArray(req.params.mint) ? req.params.mint[0] : req.params.mint });
@@ -111,7 +122,11 @@ app.get('/api/programs/labeled-program-account', async (req: Request, res: Respo
   try {
     const programAddress = q(req, 'programAddress').trim();
     if (!programAddress) return res.status(400).json({ error: 'programAddress query required' });
+    const cache = readProgramCacheFromDisk();
+    if (cache[programAddress] != null) return res.json(cache[programAddress]!);
     const data = await client.getLabeledProgramAccount(programAddress);
+    cache[programAddress] = data;
+    writeProgramCacheToDisk(cache);
     res.json(data);
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status ?? 500;

@@ -213,7 +213,7 @@ function fmtPriceAmount(v: unknown): string {
 
 function quoteSymOrTrunc(quoteMint: string | undefined): string {
   if (!quoteMint) return '—';
-  return quoteSymbolCache[quoteMint] || truncate(quoteMint);
+  return quoteSymbolCache[quoteMint] || HARDCODED_QUOTE_MINTS[quoteMint] || truncate(quoteMint);
 }
 
 function isStableQuoteSymbol(sym: string): boolean {
@@ -559,7 +559,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   for (const q of quotesRaw.slice(0, 20)) {
     if (!quoteSymbolCache[q.key] && !HARDCODED_QUOTE_MINTS[q.key]) needSymbolMints.add(q.key);
   }
-  const pairQuoteSymbols: Record<string, string> = { ...quoteSymbolCache };
+  const pairQuoteSymbols: Record<string, string> = { ...HARDCODED_QUOTE_MINTS, ...quoteSymbolCache };
   if (needSymbolMints.size > 0) {
     try {
       const r = await fetchWithRetry('/api/token-symbols', {

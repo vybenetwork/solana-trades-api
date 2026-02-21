@@ -842,7 +842,7 @@ exportAllBtn.addEventListener('click', async () => {
 
   try {
     const query = buildTradesQueryForTable();
-    const limit = Number(limitSelect.value) || 1000;
+    const limit = Number(limitSelect.value) || 250;
     const maxPages = Math.max(1, Math.trunc(Number(maxPagesInput.value || '50')));
 
     // Export pulls pages starting from pageFrom.

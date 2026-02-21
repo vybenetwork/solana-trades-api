@@ -7,6 +7,7 @@ import { loadEnv, getApiKey, PUBLIC_DIR } from './config.js';
 import { createClient } from './api/index.js';
 import { toHumanReadableError } from './api/client.js';
 import type { GetTradesParams, TradesSortField } from './api/trades.js';
+import { getTokenSymbol } from './api/token-symbol.js';
 import {
   readSymbolCacheFromDisk,
   writeSymbolCacheToDisk,
@@ -70,11 +71,20 @@ app.get('/api/token-symbol/:mint', async (req: Request, res: Response) => {
     if (!mint) return res.status(400).json({ error: 'Mint address required' });
     const cache = readSymbolCacheFromDisk();
     if (cache[mint] != null) return res.json({ symbol: cache[mint] });
-    const token = await client.getToken(mint);
-    const symbol = (token.symbol ?? '').trim();
+    let symbol = await getTokenSymbol(mint);
+    if (symbol === mint || symbol.trim() === '') {
+      try {
+        const token = await client.getToken(mint);
+        symbol = (token.symbol ?? '').trim() || mint;
+      } catch {
+        symbol = mint;
+      }
+    }
     const out = symbol || mint;
-    cache[mint] = out;
-    writeSymbolCacheToDisk(cache);
+    if (symbol !== '' && symbol !== mint) {
+      cache[mint] = out;
+      writeSymbolCacheToDisk(cache);
+    }
     res.json({ symbol: out });
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
@@ -91,7 +101,7 @@ app.get('/api/trades', async (req: Request, res: Response) => {
     }
 
     const limitRaw = qNum(req, 'limit');
-    const limit = limitRaw != null ? Math.min(Math.max(0, limitRaw), 1000) : undefined;
+    const limit = limitRaw != null ? Math.min(Math.max(0, limitRaw), 1000) : 250;
     const pageRaw = qNum(req, 'page');
     const page = pageRaw != null ? Math.max(0, Math.trunc(pageRaw)) : undefined;
 
@@ -135,8 +145,11 @@ app.get('/api/programs/labeled-program-account', async (req: Request, res: Respo
     const cache = readProgramCacheFromDisk();
     if (cache[programAddress] != null) return res.json(cache[programAddress]!);
     const data = await client.getLabeledProgramAccount(programAddress);
-    cache[programAddress] = data;
-    writeProgramCacheToDisk(cache);
+    const label = labelFromProgramResponse(data);
+    if (label != null && label.trim() !== '') {
+      cache[programAddress] = data;
+      writeProgramCacheToDisk(cache);
+    }
     res.json(data);
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
@@ -167,9 +180,12 @@ app.post('/api/programs/labeled-program-accounts', async (req: Request, res: Res
         batch.map(async (addr) => {
           try {
             const data = await client.getLabeledProgramAccount(addr);
-            cache[addr] = data;
-            updated = true;
-            return { addr, label: labelFromProgramResponse(data) };
+            const label = labelFromProgramResponse(data);
+            if (label != null && label.trim() !== '') {
+              cache[addr] = data;
+              updated = true;
+            }
+            return { addr, label: label ?? null };
           } catch {
             return { addr, label: null };
           }
@@ -202,13 +218,25 @@ app.post('/api/token-symbols', async (req: Request, res: Response) => {
       return true;
     });
     if (needFetch.length > 0) {
+      let cacheUpdated = false;
       const results = await Promise.all(
         needFetch.map(async (mint) => {
           try {
-            const token = await client.getToken(mint);
-            const symbol = (token.symbol ?? '').trim() || mint;
-            cache[mint] = symbol;
-            return { mint, symbol };
+            let symbol = await getTokenSymbol(mint);
+            if (symbol === mint || symbol.trim() === '') {
+              try {
+                const token = await client.getToken(mint);
+                symbol = (token.symbol ?? '').trim() || mint;
+              } catch {
+                symbol = mint;
+              }
+            }
+            const out = symbol || mint;
+            if (symbol !== '' && symbol !== mint) {
+              cache[mint] = out;
+              cacheUpdated = true;
+            }
+            return { mint, symbol: out };
           } catch {
             return { mint, symbol: mint };
           }
@@ -217,7 +245,7 @@ app.post('/api/token-symbols', async (req: Request, res: Response) => {
       for (const { mint, symbol } of results) {
         symbols[mint] = symbol;
       }
-      writeSymbolCacheToDisk(cache);
+      if (cacheUpdated) writeSymbolCacheToDisk(cache);
     }
     res.json({ symbols });
   } catch (err) {

@@ -483,11 +483,18 @@ async function fetchSymbol(mint: string): Promise<string | undefined> {
   return s;
 }
 
-async function ensureQuoteSymbols(trades: VybeTrade[]): Promise<void> {
+/** Each row has baseMintAddress and quoteMintAddress. Use the one that isn't the mint being analysed. */
+function otherMint(t: VybeTrade, mintBeingAnalysed: string): string {
+  const base = (t.baseMintAddress ?? '').trim();
+  const quote = (t.quoteMintAddress ?? '').trim();
+  return base === mintBeingAnalysed ? quote : base;
+}
+
+async function ensureQuoteSymbols(trades: VybeTrade[], baseMint: string): Promise<void> {
   const unique = new Set<string>();
   for (const t of trades.slice(0, 250)) {
-    const m = (t.quoteMintAddress ?? '').trim();
-    if (!m) continue;
+    const m = otherMint(t, baseMint).trim();
+    if (!m || m === baseMint) continue;
     if (quoteSymbolCache[m]) continue;
     unique.add(m);
     if (unique.size >= 12) break;
@@ -504,7 +511,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   const marketQuoteCount: Record<string, Record<string, number>> = {};
   trades.forEach((t) => {
     const m = (t.marketAddress ?? '').trim();
-    const q = (t.quoteMintAddress ?? '').trim();
+    const q = otherMint(t, baseMint);
     if (!m) return;
     marketCount[m] = (marketCount[m] ?? 0) + 1;
     if (q && q !== baseMint) {
@@ -524,7 +531,10 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     });
 
   const programs = topCounts(trades.map((t) => t.programAddress), 5);
-  const quotesRaw = topCounts(trades.map((t) => t.quoteMintAddress), 20);
+  const quotesRaw = topCounts(
+    trades.map((t) => otherMint(t, baseMint)).filter((m) => m && m !== baseMint),
+    20
+  );
 
   const programLabels: Record<string, string> = {};
   programs.forEach((p) => {
@@ -637,7 +647,7 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
           const time = formatTime(t.blockTime);
           const mint = mintAddressInput.value.trim();
           const baseSym = lastBaseSymbol || (mint ? truncate(mint) : '—');
-          const quoteSym = quoteSymOrTrunc(t.quoteMintAddress);
+          const quoteSym = quoteSymOrTrunc(otherMint(t, mint));
 
           const priceN = Number(t.price);
           const price = Number.isFinite(priceN)
@@ -797,7 +807,7 @@ async function onFetch(): Promise<void> {
 
     lastRemoteTrades = allTrades;
     lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
-    await ensureQuoteSymbols(lastFilteredTrades);
+    await ensureQuoteSymbols(lastFilteredTrades, mintAddressInput.value.trim());
     renderTrades(lastFilteredTrades, {
       remoteCount: lastRemoteTrades.length,
       filteredCount: lastFilteredTrades.length,

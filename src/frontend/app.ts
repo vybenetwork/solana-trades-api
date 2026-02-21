@@ -185,29 +185,49 @@ function fmtMaybeNumber(v: unknown, maxFrac = 2): string {
   return fmtNum(n, maxFrac);
 }
 
-function fmtTokenAmount(v: unknown): string {
-  const n = typeof v === 'number' ? v : Number(v);
-  if (!Number.isFinite(n)) return '—';
+const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+function toSuperscript(exp: number): string {
+  if (exp >= 0) return SUPERSCRIPT_DIGITS[exp] ?? String(exp);
+  const s = String(exp);
+  return '⁻' + s.slice(1).replace(/\d/g, (d) => SUPERSCRIPT_DIGITS[Number(d)] ?? d);
+}
+
+/** Compact exponent form for small numbers: 0.0⁻ⁿ + 3 digits (e.g. 0.0⁻⁷74). Returns null if not in range. */
+function fmtSmallNumber(n: number): string | null {
   const abs = Math.abs(n);
-  const maxFrac = abs >= 10 ? 0 : abs >= 1 ? 2 : 4;
-  return fmtNum(n, maxFrac);
+  if (abs === 0 || abs >= 0.001) return null;
+  const exp = Math.floor(Math.log10(abs));
+  const mantissa = n * 10 ** -exp;
+  const rounded = Math.round(mantissa * 100) / 100;
+  const digits = String(rounded.toFixed(2)).replace('.', '').replace(/0+$/, '');
+  return `0.0${toSuperscript(exp)}${digits}`;
 }
 
 function fmtUsd(v: unknown): string {
   const n = typeof v === 'number' ? v : Number(v);
   if (!Number.isFinite(n)) return '—';
+  const small = fmtSmallNumber(n);
+  if (small !== null) return `$${small}`;
   const abs = Math.abs(n);
-  // Rules:
-  // - >= 9.99 USD: show no decimals
-  // - 1..9.99 USD: show up to 2 decimals
-  // - < 1 USD: show higher precision (up to 9 decimals), no trailing zeros
   const maxFrac = abs >= 9.99 ? 0 : abs >= 1 ? 2 : 9;
   return `$${fmtNum(n, maxFrac)}`;
+}
+
+function fmtTokenAmount(v: unknown): string {
+  const n = typeof v === 'number' ? v : Number(v);
+  if (!Number.isFinite(n)) return '—';
+  const small = fmtSmallNumber(n);
+  if (small !== null) return small;
+  const abs = Math.abs(n);
+  const maxFrac = abs >= 10 ? 0 : abs >= 1 ? 2 : 4;
+  return fmtNum(n, maxFrac);
 }
 
 function fmtPriceAmount(v: unknown): string {
   const n = typeof v === 'number' ? v : Number(v);
   if (!Number.isFinite(n)) return '—';
+  const small = fmtSmallNumber(n);
+  if (small !== null) return small;
   const abs = Math.abs(n);
   const maxFrac = abs >= 10 ? 0 : abs >= 1 ? 2 : 9;
   return fmtNum(n, maxFrac);
@@ -507,6 +527,23 @@ async function ensureQuoteSymbols(trades: VybeTrade[], baseMint: string): Promis
   }
 }
 
+/** Ensure symbol cache has base and quote mints for trades (for table input/output columns). */
+async function ensureSymbolsForTrades(trades: VybeTrade[]): Promise<void> {
+  const unique = new Set<string>();
+  for (const t of trades.slice(0, 500)) {
+    const b = (t.baseMintAddress ?? '').trim();
+    const q = (t.quoteMintAddress ?? '').trim();
+    if (b) unique.add(b);
+    if (q) unique.add(q);
+    if (unique.size >= 50) break;
+  }
+  for (const m of unique) {
+    if (quoteSymbolCache[m]) continue;
+    const s = await fetchSymbol(m);
+    if (s) quoteSymbolCache[m] = s;
+  }
+}
+
 async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   const baseMint = mintAddressInput.value.trim();
   const marketCount: Record<string, number> = {};
@@ -648,23 +685,27 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
     ? trades
         .map((t) => {
           const time = formatTime(t.blockTime);
-          const mint = mintAddressInput.value.trim();
-          const baseSym = lastBaseSymbol || (mint ? truncate(mint) : '—');
-          const quoteSym = quoteSymOrTrunc(otherMint(t, mint));
+          const inputSym = quoteSymOrTrunc(t.baseMintAddress);
+          const outputSym = quoteSymOrTrunc(t.quoteMintAddress);
 
           const priceN = Number(t.price);
           const price = Number.isFinite(priceN)
-            ? isStableQuoteSymbol(quoteSym)
+            ? isStableQuoteSymbol(outputSym)
               ? `${fmtUsd(priceN)} USD`
-              : `${fmtPriceAmount(priceN)} ${quoteSym}`
+              : `${fmtPriceAmount(priceN)} ${outputSym}`
             : '—';
 
-          const baseSize = t.baseSize != null ? `${fmtTokenAmount(t.baseSize)} ${baseSym}` : '—';
-          const quoteSizeN = Number(t.quoteSize);
-          const quoteSize = t.quoteSize != null
-            ? isStableQuoteSymbol(quoteSym) && Number.isFinite(quoteSizeN)
-              ? `${fmtUsd(quoteSizeN)} USD`
-              : `${fmtTokenAmount(t.quoteSize)} ${quoteSym}`
+          const analysedMint = mintAddressInput.value.trim();
+          const baseMint = (t.baseMintAddress ?? '').trim();
+          const quoteMint = (t.quoteMintAddress ?? '').trim();
+          const type = !analysedMint ? '—' : baseMint === analysedMint ? 'Sell' : quoteMint === analysedMint ? 'Buy' : '—';
+
+          const inputAmount = t.baseSize != null ? `${fmtTokenAmount(t.baseSize)} ${inputSym}` : '—';
+          const outputSizeN = Number(t.quoteSize);
+          const outputAmount = t.quoteSize != null
+            ? isStableQuoteSymbol(outputSym) && Number.isFinite(outputSizeN)
+              ? `${fmtUsd(outputSizeN)} USD`
+              : `${fmtTokenAmount(t.quoteSize)} ${outputSym}`
             : '—';
 
           const market = t.marketAddress
@@ -680,15 +721,16 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
           return `<tr>
             <td>${time}</td>
             <td style="text-align:right">${price}</td>
-            <td style="text-align:right">${baseSize}</td>
-            <td style="text-align:right">${quoteSize}</td>
+            <td style="text-align:center">${type}</td>
+            <td style="text-align:right">${inputAmount}</td>
+            <td style="text-align:right">${outputAmount}</td>
             <td>${market}</td>
             <td>${program}</td>
             <td>${sig}</td>
           </tr>`;
         })
         .join('')
-    : '<tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    : '<tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
 }
 
 function toCsv(trades: VybeTrade[]): string {
@@ -811,6 +853,7 @@ async function onFetch(): Promise<void> {
     lastRemoteTrades = allTrades;
     lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
     await ensureQuoteSymbols(lastFilteredTrades, mintAddressInput.value.trim());
+    await ensureSymbolsForTrades(lastFilteredTrades);
     renderTrades(lastFilteredTrades, {
       remoteCount: lastRemoteTrades.length,
       filteredCount: lastFilteredTrades.length,

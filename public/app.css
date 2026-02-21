@@ -409,12 +409,33 @@ button:disabled {
   overflow: auto;
 }
 
+#tradesTable {
+  table-layout: fixed;
+}
+
 #tradesTable thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: #18181b;
 }
+
+#tradesTable th:nth-child(1),
+#tradesTable td:nth-child(1) { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(2),
+#tradesTable td:nth-child(2) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(3),
+#tradesTable td:nth-child(3) { max-width: 4rem; }
+#tradesTable th:nth-child(4),
+#tradesTable td:nth-child(4) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(5),
+#tradesTable td:nth-child(5) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(6),
+#tradesTable td:nth-child(6) { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(7),
+#tradesTable td:nth-child(7) { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable th:nth-child(8),
+#tradesTable td:nth-child(8) { max-width: 6rem; overflow: hidden; text-overflow: ellipsis; }
 
 table {
   width: 100%;

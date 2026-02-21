@@ -21,7 +21,17 @@ console.log('VYBE_API_KEY loaded (length %d)', apiKey.length);
 const app = express();
 const client = createClient(apiKey);
 
+app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
+
+const PROGRAM_LABEL_CONCURRENCY = 3;
+
+function labelFromProgramResponse(data: { programs?: Array<{ name?: string; label?: string; symbol?: string; labels?: string[] }> }): string | null {
+  const list = data?.programs ?? [];
+  const p = list[0];
+  if (!p) return null;
+  return (p.name ?? p.label ?? p.symbol ?? (Array.isArray(p.labels) ? p.labels[0] ?? null : null) ?? null) ?? null;
+}
 
 function q(req: Request, key: string): string {
   const v = req.query[key];
@@ -128,6 +138,88 @@ app.get('/api/programs/labeled-program-account', async (req: Request, res: Respo
     cache[programAddress] = data;
     writeProgramCacheToDisk(cache);
     res.json(data);
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
+    res.status(status).json({ error: toHumanReadableError(err) });
+  }
+});
+
+app.post('/api/programs/labeled-program-accounts', async (req: Request, res: Response) => {
+  try {
+    const programAddresses = Array.isArray(req.body?.programAddresses)
+      ? (req.body.programAddresses as string[]).map((a: unknown) => String(a).trim()).filter(Boolean)
+      : [];
+    const labels: Record<string, string> = {};
+    const cache = readProgramCacheFromDisk();
+    const needFetch = programAddresses.filter((addr) => {
+      const cached = cache[addr];
+      const label = cached != null ? labelFromProgramResponse(cached) : null;
+      if (label != null) {
+        labels[addr] = label;
+        return false;
+      }
+      return true;
+    });
+    let updated = false;
+    for (let i = 0; i < needFetch.length; i += PROGRAM_LABEL_CONCURRENCY) {
+      const batch = needFetch.slice(i, i + PROGRAM_LABEL_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (addr) => {
+          try {
+            const data = await client.getLabeledProgramAccount(addr);
+            cache[addr] = data;
+            updated = true;
+            return { addr, label: labelFromProgramResponse(data) };
+          } catch {
+            return { addr, label: null };
+          }
+        })
+      );
+      for (const { addr, label } of results) {
+        if (label != null) labels[addr] = label;
+      }
+    }
+    if (updated) writeProgramCacheToDisk(cache);
+    res.json({ labels });
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
+    res.status(status).json({ error: toHumanReadableError(err) });
+  }
+});
+
+app.post('/api/token-symbols', async (req: Request, res: Response) => {
+  try {
+    const mints = Array.isArray(req.body?.mints)
+      ? (req.body.mints as unknown[]).map((m) => String(m).trim()).filter(Boolean)
+      : [];
+    const symbols: Record<string, string> = {};
+    const cache = readSymbolCacheFromDisk();
+    const needFetch = mints.filter((mint) => {
+      if (cache[mint] != null) {
+        symbols[mint] = (cache[mint] ?? '').replace(/\0/g, '').trim();
+        return false;
+      }
+      return true;
+    });
+    if (needFetch.length > 0) {
+      const results = await Promise.all(
+        needFetch.map(async (mint) => {
+          try {
+            const token = await client.getToken(mint);
+            const symbol = (token.symbol ?? '').trim() || mint;
+            cache[mint] = symbol;
+            return { mint, symbol };
+          } catch {
+            return { mint, symbol: mint };
+          }
+        })
+      );
+      for (const { mint, symbol } of results) {
+        symbols[mint] = symbol;
+      }
+      writeSymbolCacheToDisk(cache);
+    }
+    res.json({ symbols });
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status ?? 500;
     res.status(status).json({ error: toHumanReadableError(err) });

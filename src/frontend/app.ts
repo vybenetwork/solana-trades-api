@@ -254,11 +254,11 @@ function parseIntOrUndefined(v: string): number | undefined {
   return Math.max(0, Math.trunc(n));
 }
 
-async function fetchWithRetry(url: string): Promise<Response> {
+async function fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= MAX_FETCH_RETRIES; attempt++) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, init);
       if (res.status === 502 || res.status === 503 || res.status === 504) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -531,34 +531,52 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     programLabels[p.key] = WELL_KNOWN_PROGRAMS[p.key] ?? p.key;
   });
   const needLabel = programs.filter((p) => !WELL_KNOWN_PROGRAMS[p.key]);
-  async function runQueue<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>): Promise<void> {
-    const executing: Promise<void>[] = [];
-    for (const item of items) {
-      const p = fn(item).then(() => {
-        executing.splice(executing.indexOf(p), 1);
-      });
-      executing.push(p);
-      if (executing.length >= concurrency) await Promise.race(executing);
-    }
-    await Promise.all(executing);
-  }
-  await runQueue(needLabel.map((p) => p.key), 2, async (programAddress) => {
+  if (needLabel.length > 0) {
     try {
-      const url = `/api/programs/labeled-program-account?programAddress=${encodeURIComponent(programAddress)}`;
-      const r = await fetchWithRetry(url);
-      if (!r.ok) return;
-      const body = (await r.json().catch(() => ({}))) as { programs?: ProgramItem[] };
-      const list = body.programs ?? [];
-      const p = list[0];
-      if (!p) return;
-      const name = p.name ?? p.label ?? p.symbol ?? (Array.isArray(p.labels) && p.labels[0]);
-      if (name) programLabels[programAddress] = name;
+      const r = await fetchWithRetry('/api/programs/labeled-program-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programAddresses: needLabel.map((p) => p.key) }),
+      });
+      if (r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { labels?: Record<string, string> };
+        const labels = body.labels ?? {};
+        Object.assign(programLabels, labels);
+      }
     } catch {
       // keep WELL_KNOWN or address fallback
     }
-  });
+  }
 
   const baseSymbol = (lastBaseSymbol ?? '').toUpperCase() || '—';
+
+  const needSymbolMints = new Set<string>();
+  for (const { bestQuoteMint } of topMarketsRaw) {
+    if (bestQuoteMint && !quoteSymbolCache[bestQuoteMint] && !HARDCODED_QUOTE_MINTS[bestQuoteMint]) {
+      needSymbolMints.add(bestQuoteMint);
+    }
+  }
+  for (const q of quotesRaw.slice(0, 20)) {
+    if (!quoteSymbolCache[q.key] && !HARDCODED_QUOTE_MINTS[q.key]) needSymbolMints.add(q.key);
+  }
+  const pairQuoteSymbols: Record<string, string> = { ...quoteSymbolCache };
+  if (needSymbolMints.size > 0) {
+    try {
+      const r = await fetchWithRetry('/api/token-symbols', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mints: [...needSymbolMints] }),
+      });
+      if (r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { symbols?: Record<string, string> };
+        const symbols = body.symbols ?? {};
+        Object.assign(pairQuoteSymbols, symbols);
+        Object.assign(quoteSymbolCache, symbols);
+      }
+    } catch {
+      // use cache only
+    }
+  }
 
   topProgramsBody.innerHTML = programs.length
     ? programs
@@ -571,17 +589,6 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
         })
         .join('')
     : '<tr><td>—</td><td style="text-align:right">—</td></tr>';
-
-  const pairQuoteSymbols: Record<string, string> = { ...quoteSymbolCache };
-  for (const { bestQuoteMint } of topMarketsRaw) {
-    if (bestQuoteMint && !pairQuoteSymbols[bestQuoteMint]) {
-      const s = await fetchSymbol(bestQuoteMint);
-      if (s) {
-        pairQuoteSymbols[bestQuoteMint] = s;
-        quoteSymbolCache[bestQuoteMint] = s;
-      }
-    }
-  }
 
   const topMarketsWithPair = topMarketsRaw
     .map(({ marketAddress, count, bestQuoteMint }) => {
@@ -601,22 +608,15 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
         .join('')
     : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
 
-  const symbols: Record<string, string> = {};
-  const quotes: { key: string; count: number }[] = [];
-  for (const q of quotesRaw) {
-    if (quotes.length >= 5) break;
-    const s = await fetchSymbol(q.key);
-    if (s && s.trim() !== '') {
-      symbols[q.key] = s;
-      quoteSymbolCache[q.key] = s;
-      quotes.push(q);
-    }
-  }
+  const quotes = quotesRaw.filter((q) => {
+    const s = pairQuoteSymbols[q.key] ?? HARDCODED_QUOTE_MINTS[q.key];
+    return s && s.trim() !== '' && s !== q.key;
+  }).slice(0, 5);
 
   topQuotesBody.innerHTML = quotes.length
     ? quotes
         .map((q) => {
-          const sym = symbols[q.key] ?? '—';
+          const sym = pairQuoteSymbols[q.key] ?? HARDCODED_QUOTE_MINTS[q.key] ?? '—';
           const mint = solscanLinkAccount(q.key, truncate(q.key, 4, 4));
           return `<tr>
             <td>${sym}</td>

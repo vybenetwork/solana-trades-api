@@ -123,13 +123,15 @@ const HARDCODED_QUOTE_MINTS: Record<string, string> = {
   Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 'USDT',
 };
 
-/** Well-known DEX program IDs → label (used when labeled-program-account has no match). */
+/** Well-known DEX program IDs → label (used when labeled-program-account has no match). Matches token-stats repo. */
 const WELL_KNOWN_PROGRAMS: Record<string, string> = {
   '675kPX9MHTjS2zt1qwr1sgbV5tjF6n5paF8GcaxHfL8r': 'Raydium',
   '9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP': 'Orca',
   '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P': 'Pump.fun',
   'EewxydAPCCVuNEyrVN68PuSYdQ7wKn27V9Gje1wcB3NH': 'Orca (Whirlpool)',
   'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK': 'Raydium CLMM',
+  'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C': 'Raydium CPMM',
+  'Gswppe6ERWKpUTXvRPfXdzHhiCyJvLadVvXGfdpBqcE1': 'Guac Swap',
   'PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY': 'Phoenix',
   'LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo': 'Meteora',
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'Jupiter',
@@ -593,8 +595,9 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
         .map((p) => {
           const link = solscanLinkAccount(p.key, truncate(p.key, 5, 4));
           const rawLabel = programLabels[p.key];
-          const label = rawLabel && rawLabel.length > 19 ? rawLabel.slice(0, 19) + '...' : rawLabel;
-          const labelSuffix = label && label !== p.key ? ` (${label})` : '';
+          const hasRealLabel = rawLabel && rawLabel !== p.key;
+          const displayLabel = hasRealLabel ? (rawLabel.length > 19 ? rawLabel.slice(0, 19) + '...' : rawLabel) : '';
+          const labelSuffix = displayLabel ? ` (${displayLabel})` : '';
           return `<tr><td>${link}${labelSuffix}</td><td style="text-align:right">${p.count}</td></tr>`;
         })
         .join('')

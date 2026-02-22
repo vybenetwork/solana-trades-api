@@ -469,17 +469,35 @@ button:disabled {
 }
 #tradesTable th:nth-child(8),
 #tradesTable td:nth-child(8) {
-  width: 140px;
-  max-width: 160px;
+  width: 100px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#tradesTable td:nth-child(8).authority-fee-payer-double {
+  padding-top: 0.25rem;
+  padding-bottom: 0.2rem;
+  vertical-align: top;
+}
+#tradesTable td:nth-child(8).authority-fee-payer-single {
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  vertical-align: middle;
+}
 #tradesTable th:nth-child(9),
 #tradesTable td:nth-child(9) { width: 24px; max-width: 24px; min-width: 24px; text-align: center; }
-#tradesTable .fee-payer-cell { font-size: 8pt; color: #facc15; }
+#tradesTable .fee-payer-cell {
+  font-size: 5pt;
+  color: #facc15;
+  line-height: 1.15;
+  display: block;
+}
 #tradesTable .fee-payer-cell a { color: #facc15; }
 #tradesTable .amount-usdc { color: #86efac; }
 #tradesTable .amount-sol { color: #c4b5fd; }
+#tradesTable .amount-other-value { color: #fef08a; }
+#tradesTable .amount-other-symbol { color: #facc15; }
+#tradesTable .market-other-yellow { color: #facc15; }
 #tradesTable .txid-icon { font-size: 1rem; text-decoration: none; }
 
 table {

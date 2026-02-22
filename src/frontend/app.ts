@@ -286,12 +286,17 @@ function symbolMax5(sym: string): string {
   return sym.length > 5 ? sym.slice(0, 5) : sym;
 }
 
-/** Wrap amount/price HTML in a color span when symbol is USDC or SOL. */
-function wrapAmountClass(html: string, sym: string): string {
+/** Wrap amount/price HTML: stables = light green, SOL = light purple. When NOT the analysed mint and symbol is other = light yellow value + yellow symbol. */
+function wrapAmountClass(html: string, sym: string, isAnalysedMint = false): string {
   const d = displaySymbol(sym);
-  if (sym === 'USDC') return `<span class="amount-usdc">${html}</span>`;
+  if (isStableQuoteSymbol(sym)) return `<span class="amount-usdc">${html}</span>`;
   if (d === 'SOL') return `<span class="amount-sol">${html}</span>`;
-  return html;
+  if (isAnalysedMint) return html;
+  const lastSpace = html.lastIndexOf(' ');
+  if (lastSpace === -1) return `<span class="amount-other-value">${html}</span>`;
+  const valuePart = html.slice(0, lastSpace);
+  const symbolPart = html.slice(lastSpace + 1);
+  return `<span class="amount-other-value">${valuePart}</span> <span class="amount-other-symbol">${symbolPart}</span>`;
 }
 
 function isStableQuoteSymbol(sym: string): boolean {
@@ -813,13 +818,15 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
               ? `${fmtUsd(priceN)} ${priceSymD}`
               : `${fmtPriceAmount(priceN)} ${priceSymD}`;
           }
-          const price = priceSym ? wrapAmountClass(priceRaw, priceSym) : priceRaw;
+          const priceIsAnalysedMint = !analysedMint;
+          const price = priceSym ? wrapAmountClass(priceRaw, priceSym, priceIsAnalysedMint) : priceRaw;
 
           const type = !analysedMint ? '—' : baseMint === analysedMint ? 'Sell' : quoteMint === analysedMint ? 'Buy' : '—';
 
           const inputSymD = symbolMax5(displaySymbol(inputSym));
           const inputAmountRaw = t.baseSize != null ? `${fmtTokenAmount(t.baseSize)} ${inputSymD}` : '—';
-          const inputAmount = wrapAmountClass(inputAmountRaw, inputSym);
+          const inputIsAnalysedMint = !analysedMint || baseMint === analysedMint;
+          const inputAmount = wrapAmountClass(inputAmountRaw, inputSym, inputIsAnalysedMint);
           const outputSizeN = Number(t.quoteSize);
           const outputSymD = symbolMax5(displaySymbol(outputSym));
           const outputAmountRaw = t.quoteSize != null
@@ -827,7 +834,8 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
               ? `${fmtUsd(outputSizeN)} ${outputSymD}`
               : `${fmtTokenAmount(t.quoteSize)} ${outputSymD}`
             : '—';
-          const outputAmount = wrapAmountClass(outputAmountRaw, outputSym);
+          const outputIsAnalysedMint = !analysedMint || quoteMint === analysedMint;
+          const outputAmount = wrapAmountClass(outputAmountRaw, outputSym, outputIsAnalysedMint);
 
           const otherSymbol =
             analysedMint && (baseMint === analysedMint || quoteMint === analysedMint)
@@ -835,8 +843,24 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
                 ? outputSymD
                 : inputSymD
               : `${inputSymD}/${outputSymD}`;
+          const otherSymRaw =
+            analysedMint && (baseMint === analysedMint || quoteMint === analysedMint)
+              ? baseMint === analysedMint
+                ? outputSym
+                : inputSym
+              : '';
+          const marketOtherClass =
+            otherSymRaw
+              ? isStableQuoteSymbol(otherSymRaw)
+                ? 'amount-usdc'
+                : displaySymbol(otherSymRaw) === 'SOL'
+                  ? 'amount-sol'
+                  : 'market-other-yellow'
+              : '';
+          const marketOtherPart =
+            marketOtherClass ? `<span class="${marketOtherClass}">(${otherSymbol})</span>` : `(${otherSymbol})`;
           const market = t.marketAddress
-            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" rel="noopener noreferrer" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)} (${otherSymbol})</a>`
+            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" rel="noopener noreferrer" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)} ${marketOtherPart}</a>`
             : '—';
           const program = t.programAddress
             ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.programAddress)}" target="_blank" rel="noopener noreferrer" title="${t.programAddress}">${programDisplayLabel(t.programAddress)}</a>`
@@ -846,13 +870,15 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
           const feePayerLink = feePayer
             ? `<span class="fee-payer-cell">(${solscanLinkAccount(feePayer, truncate(feePayer, 4, 4))})</span>`
             : '';
+          const hasTwoValues = !!(authority && feePayer && authority !== feePayer);
+          const authorityFeePayerCellClass = hasTwoValues ? 'authority-fee-payer-double' : 'authority-fee-payer-single';
           const authorityFeePayer =
             !authority && !feePayer
               ? '—'
               : authority === feePayer
                 ? solscanLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))
                 : authority && feePayer
-                  ? `${solscanLinkAccount(authority, truncate(authority, 4, 4))} ${feePayerLink}`
+                  ? `${solscanLinkAccount(authority, truncate(authority, 4, 4))}<br>${feePayerLink}`
                   : authority
                     ? solscanLinkAccount(authority, truncate(authority, 4, 4))
                     : feePayer
@@ -870,7 +896,7 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
             <td style="text-align:right">${outputAmount}</td>
             <td>${market}</td>
             <td>${program}</td>
-            <td>${authorityFeePayer}</td>
+            <td class="${authorityFeePayerCellClass}">${authorityFeePayer}</td>
             <td style="text-align:center">${txid}</td>
           </tr>`;
         })

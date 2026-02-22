@@ -421,26 +421,71 @@ button:disabled {
 }
 
 #tradesTable th:nth-child(1),
-#tradesTable td:nth-child(1) { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(1) {
+  width: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(2),
-#tradesTable td:nth-child(2) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(2) {
+  width: 40px;
+  max-width: 40px;
+}
 #tradesTable th:nth-child(3),
-#tradesTable td:nth-child(3) { max-width: 4rem; }
+#tradesTable td:nth-child(3) {
+  width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(4),
-#tradesTable td:nth-child(4) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(4) {
+  width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(5),
-#tradesTable td:nth-child(5) { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(5) {
+  width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(6),
-#tradesTable td:nth-child(6) { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(6) {
+  width: 102px;
+  max-width: 102px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(7),
-#tradesTable td:nth-child(7) { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(7) {
+  width: 72px;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #tradesTable th:nth-child(8),
-#tradesTable td:nth-child(8) { max-width: 6rem; overflow: hidden; text-overflow: ellipsis; }
+#tradesTable td:nth-child(8) {
+  width: 140px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#tradesTable th:nth-child(9),
+#tradesTable td:nth-child(9) { width: 24px; max-width: 24px; min-width: 24px; text-align: center; }
+#tradesTable .fee-payer-cell { font-size: 8pt; color: #facc15; }
+#tradesTable .fee-payer-cell a { color: #facc15; }
+#tradesTable .amount-usdc { color: #86efac; }
+#tradesTable .amount-sol { color: #c4b5fd; }
+#tradesTable .txid-icon { font-size: 1rem; text-decoration: none; }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 9pt;
 }
 
 th,

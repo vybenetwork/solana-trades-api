@@ -113,6 +113,7 @@ let lastRemoteTrades: VybeTrade[] = [];
 let lastFilteredTrades: VybeTrade[] = [];
 let lastBaseSymbol: string | undefined;
 const quoteSymbolCache: Record<string, string> = {};
+const programLabelCache: Record<string, string> = {};
 
 const STABLE_QUOTE_SYMBOLS = new Set(['USD', 'USDC', 'USDT', 'PYUSD', 'USD1']);
 
@@ -179,6 +180,29 @@ function fmtNum(n: number, maxFrac: number): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: maxFrac });
 }
 
+/** For 0 < n < 0.1: at most 3 digits after the leading zeros (e.g. 0.002978518 → 0.00297). Returns null otherwise. */
+function fmtTrailingAfterZero(n: number): string | null {
+  const abs = Math.abs(n);
+  if (abs >= 0.1 || abs === 0) return null;
+  const s = abs.toFixed(10);
+  if (!s.startsWith('0.')) return null;
+  let i = 2;
+  while (i < s.length && s[i] === '0') i++;
+  if (i >= s.length) return (n < 0 ? '-' : '') + s;
+  const prefix = s.slice(0, i);
+  const threeDigits = s.slice(i, i + 3);
+  const result = (n < 0 ? '-' : '') + prefix + threeDigits;
+  return result;
+}
+
+/** For 0.1 <= n < 1: at most 3 decimal places, truncated (e.g. 0.147888131 → 0.147). Returns null otherwise. */
+function fmtPointOneToOne(n: number): string | null {
+  const abs = Math.abs(n);
+  if (abs < 0.1 || abs >= 1) return null;
+  const truncated = Math.floor(n * 1000) / 1000;
+  return truncated.toString();
+}
+
 function fmtMaybeNumber(v: unknown, maxFrac = 2): string {
   const n = typeof v === 'number' ? v : Number(v);
   if (!Number.isFinite(n)) return '—';
@@ -192,15 +216,16 @@ function toSuperscript(exp: number): string {
   return '⁻' + s.slice(1).replace(/\d/g, (d) => SUPERSCRIPT_DIGITS[Number(d)] ?? d);
 }
 
-/** Compact exponent form for small numbers: 0.0⁻ⁿ + 3 digits (e.g. 0.0⁻⁷74). Returns null if not in range. */
+/** Compact form for small numbers: 0.0ⁿ + 3 digits, where ⁿ = number of zeros after 0.0 (e.g. 0.0⁸736). Returns null if not in range. */
 function fmtSmallNumber(n: number): string | null {
   const abs = Math.abs(n);
   if (abs === 0 || abs >= 0.001) return null;
   const exp = Math.floor(Math.log10(abs));
+  const numZeros = -exp; // e.g. 10^-8 → 8 zeros after 0.0
   const mantissa = n * 10 ** -exp;
   const rounded = Math.round(mantissa * 100) / 100;
   const digits = String(rounded.toFixed(2)).replace('.', '').replace(/0+$/, '');
-  return `0.0${toSuperscript(exp)}${digits}`;
+  return `0.0${toSuperscript(numZeros)}${digits}`;
 }
 
 function fmtUsd(v: unknown): string {
@@ -208,6 +233,10 @@ function fmtUsd(v: unknown): string {
   if (!Number.isFinite(n)) return '—';
   const small = fmtSmallNumber(n);
   if (small !== null) return `$${small}`;
+  const trailing = fmtTrailingAfterZero(n);
+  if (trailing !== null) return `$${trailing}`;
+  const pointOneToOne = fmtPointOneToOne(n);
+  if (pointOneToOne !== null) return `$${pointOneToOne}`;
   const abs = Math.abs(n);
   const maxFrac = abs >= 9.99 ? 0 : abs >= 1 ? 2 : 9;
   return `$${fmtNum(n, maxFrac)}`;
@@ -218,6 +247,10 @@ function fmtTokenAmount(v: unknown): string {
   if (!Number.isFinite(n)) return '—';
   const small = fmtSmallNumber(n);
   if (small !== null) return small;
+  const trailing = fmtTrailingAfterZero(n);
+  if (trailing !== null) return trailing;
+  const pointOneToOne = fmtPointOneToOne(n);
+  if (pointOneToOne !== null) return pointOneToOne;
   const abs = Math.abs(n);
   const maxFrac = abs >= 10 ? 0 : abs >= 1 ? 2 : 4;
   return fmtNum(n, maxFrac);
@@ -228,6 +261,10 @@ function fmtPriceAmount(v: unknown): string {
   if (!Number.isFinite(n)) return '—';
   const small = fmtSmallNumber(n);
   if (small !== null) return small;
+  const trailing = fmtTrailingAfterZero(n);
+  if (trailing !== null) return trailing;
+  const pointOneToOne = fmtPointOneToOne(n);
+  if (pointOneToOne !== null) return pointOneToOne;
   const abs = Math.abs(n);
   const maxFrac = abs >= 10 ? 0 : abs >= 1 ? 2 : 9;
   return fmtNum(n, maxFrac);
@@ -236,6 +273,25 @@ function fmtPriceAmount(v: unknown): string {
 function quoteSymOrTrunc(quoteMint: string | undefined): string {
   if (!quoteMint) return '—';
   return quoteSymbolCache[quoteMint] || HARDCODED_QUOTE_MINTS[quoteMint] || truncate(quoteMint);
+}
+
+/** Show SOL instead of wSOL in the trades table. */
+function displaySymbol(sym: string): string {
+  return sym === 'wSOL' ? 'SOL' : sym;
+}
+
+/** Truncate symbol to first 5 characters (no ellipsis) for table display. */
+function symbolMax5(sym: string): string {
+  if (!sym) return sym;
+  return sym.length > 5 ? sym.slice(0, 5) : sym;
+}
+
+/** Wrap amount/price HTML in a color span when symbol is USDC or SOL. */
+function wrapAmountClass(html: string, sym: string): string {
+  const d = displaySymbol(sym);
+  if (sym === 'USDC') return `<span class="amount-usdc">${html}</span>`;
+  if (d === 'SOL') return `<span class="amount-sol">${html}</span>`;
+  return html;
 }
 
 function isStableQuoteSymbol(sym: string): boolean {
@@ -252,7 +308,9 @@ function solscanLinkAccount(addr: string | undefined, text?: string): string {
 function formatTime(blockTime: number | undefined): string {
   if (!blockTime) return '—';
   const d = new Date(blockTime * 1000);
-  return d.toLocaleString();
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  return `${time} ${date}`;
 }
 
 function parseUnixSecondsFromDatetimeLocal(v: string): number | undefined {
@@ -544,6 +602,50 @@ async function ensureSymbolsForTrades(trades: VybeTrade[]): Promise<void> {
   }
 }
 
+/** Ensure program label cache has labels for programs in trades (for table program column). */
+async function ensureProgramLabels(trades: VybeTrade[]): Promise<void> {
+  const unique = new Set<string>();
+  for (const t of trades.slice(0, 500)) {
+    const p = (t.programAddress ?? '').trim();
+    if (p) unique.add(p);
+    if (unique.size >= 30) break;
+  }
+  for (const addr of unique) {
+    if (programLabelCache[addr]) continue;
+    programLabelCache[addr] = WELL_KNOWN_PROGRAMS[addr] ?? addr;
+  }
+  const needLabel = [...unique].filter((addr) => programLabelCache[addr] === addr);
+  if (needLabel.length === 0) return;
+  try {
+    const r = await fetchWithRetry('/api/programs/labeled-program-accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ programAddresses: needLabel }),
+    });
+    if (r.ok) {
+      const body = (await r.json().catch(() => ({}))) as { labels?: Record<string, string> };
+      const labels = body.labels ?? {};
+      Object.assign(programLabelCache, labels);
+    }
+  } catch {
+    // keep WELL_KNOWN or address fallback
+  }
+}
+
+/** Program column: first word only, or first + second word if second is all CAPS and 4–5 chars (e.g. CLMM, CPMM). */
+function programDisplayLabel(addr: string | undefined): string {
+  if (!addr) return '—';
+  const label = programLabelCache[addr] ?? WELL_KNOWN_PROGRAMS[addr] ?? addr;
+  if (!label || label === addr) return truncate(addr, 5, 4);
+  const words = label.trim().split(/\s+/);
+  const first = words[0] ?? '';
+  const second = words[1];
+  if (second && /^[A-Z]+$/.test(second) && second.length >= 4 && second.length <= 5) {
+    return `${first} ${second}`;
+  }
+  return first;
+}
+
 async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   const baseMint = mintAddressInput.value.trim();
   const marketCount: Record<string, number> = {};
@@ -687,50 +789,93 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
           const time = formatTime(t.blockTime);
           const inputSym = quoteSymOrTrunc(t.baseMintAddress);
           const outputSym = quoteSymOrTrunc(t.quoteMintAddress);
-
-          const priceN = Number(t.price);
-          const price = Number.isFinite(priceN)
-            ? isStableQuoteSymbol(outputSym)
-              ? `${fmtUsd(priceN)} USD`
-              : `${fmtPriceAmount(priceN)} ${outputSym}`
-            : '—';
-
           const analysedMint = mintAddressInput.value.trim();
           const baseMint = (t.baseMintAddress ?? '').trim();
           const quoteMint = (t.quoteMintAddress ?? '').trim();
+
+          const priceN = Number(t.price);
+          let priceRaw: string;
+          let priceSym: string;
+          if (!Number.isFinite(priceN)) {
+            priceRaw = '—';
+            priceSym = '';
+          } else if (analysedMint && quoteMint === analysedMint) {
+            const inv = 1 / priceN;
+            priceSym = isStableQuoteSymbol(inputSym) ? inputSym : displaySymbol(inputSym);
+            const priceSymD = symbolMax5(priceSym);
+            priceRaw = isStableQuoteSymbol(inputSym)
+              ? `${fmtUsd(inv)} ${priceSymD}`
+              : `${fmtPriceAmount(inv)} ${priceSymD}`;
+          } else {
+            priceSym = isStableQuoteSymbol(outputSym) ? outputSym : displaySymbol(outputSym);
+            const priceSymD = symbolMax5(priceSym);
+            priceRaw = isStableQuoteSymbol(outputSym)
+              ? `${fmtUsd(priceN)} ${priceSymD}`
+              : `${fmtPriceAmount(priceN)} ${priceSymD}`;
+          }
+          const price = priceSym ? wrapAmountClass(priceRaw, priceSym) : priceRaw;
+
           const type = !analysedMint ? '—' : baseMint === analysedMint ? 'Sell' : quoteMint === analysedMint ? 'Buy' : '—';
 
-          const inputAmount = t.baseSize != null ? `${fmtTokenAmount(t.baseSize)} ${inputSym}` : '—';
+          const inputSymD = symbolMax5(displaySymbol(inputSym));
+          const inputAmountRaw = t.baseSize != null ? `${fmtTokenAmount(t.baseSize)} ${inputSymD}` : '—';
+          const inputAmount = wrapAmountClass(inputAmountRaw, inputSym);
           const outputSizeN = Number(t.quoteSize);
-          const outputAmount = t.quoteSize != null
+          const outputSymD = symbolMax5(displaySymbol(outputSym));
+          const outputAmountRaw = t.quoteSize != null
             ? isStableQuoteSymbol(outputSym) && Number.isFinite(outputSizeN)
-              ? `${fmtUsd(outputSizeN)} USD`
-              : `${fmtTokenAmount(t.quoteSize)} ${outputSym}`
+              ? `${fmtUsd(outputSizeN)} ${outputSymD}`
+              : `${fmtTokenAmount(t.quoteSize)} ${outputSymD}`
             : '—';
+          const outputAmount = wrapAmountClass(outputAmountRaw, outputSym);
 
+          const otherSymbol =
+            analysedMint && (baseMint === analysedMint || quoteMint === analysedMint)
+              ? baseMint === analysedMint
+                ? outputSymD
+                : inputSymD
+              : `${inputSymD}/${outputSymD}`;
           const market = t.marketAddress
-            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" rel="noopener noreferrer" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)}</a>`
+            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" rel="noopener noreferrer" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)} (${otherSymbol})</a>`
             : '—';
           const program = t.programAddress
-            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.programAddress)}" target="_blank" rel="noopener noreferrer" title="${t.programAddress}">${truncate(t.programAddress, 5, 4)}</a>`
+            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.programAddress)}" target="_blank" rel="noopener noreferrer" title="${t.programAddress}">${programDisplayLabel(t.programAddress)}</a>`
             : '—';
-          const sig = t.signature
-            ? `<a href="${SOLSCAN_TX}${encodeURIComponent(t.signature)}" target="_blank" rel="noopener noreferrer" title="${t.signature}">${truncate(t.signature, 3, 3)}</a>`
+          const authority = (t.authorityAddress ?? '').trim();
+          const feePayer = (t.feePayerAddress ?? '').trim();
+          const feePayerLink = feePayer
+            ? `<span class="fee-payer-cell">(${solscanLinkAccount(feePayer, truncate(feePayer, 4, 4))})</span>`
+            : '';
+          const authorityFeePayer =
+            !authority && !feePayer
+              ? '—'
+              : authority === feePayer
+                ? solscanLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))
+                : authority && feePayer
+                  ? `${solscanLinkAccount(authority, truncate(authority, 4, 4))} ${feePayerLink}`
+                  : authority
+                    ? solscanLinkAccount(authority, truncate(authority, 4, 4))
+                    : feePayer
+                      ? feePayerLink
+                      : '—';
+          const txid = t.signature
+            ? `<a href="${SOLSCAN_TX}${encodeURIComponent(t.signature)}" target="_blank" rel="noopener noreferrer" title="${t.signature}" class="txid-icon" aria-label="View transaction">↗</a>`
             : '—';
 
           return `<tr>
             <td>${time}</td>
-            <td style="text-align:right">${price}</td>
             <td style="text-align:center">${type}</td>
+            <td style="text-align:right">${price}</td>
             <td style="text-align:right">${inputAmount}</td>
             <td style="text-align:right">${outputAmount}</td>
             <td>${market}</td>
             <td>${program}</td>
-            <td>${sig}</td>
+            <td>${authorityFeePayer}</td>
+            <td style="text-align:center">${txid}</td>
           </tr>`;
         })
         .join('')
-    : '<tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+    : '<tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
 }
 
 function toCsv(trades: VybeTrade[]): string {
@@ -854,6 +999,7 @@ async function onFetch(): Promise<void> {
     lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
     await ensureQuoteSymbols(lastFilteredTrades, mintAddressInput.value.trim());
     await ensureSymbolsForTrades(lastFilteredTrades);
+    await ensureProgramLabels(lastFilteredTrades);
     renderTrades(lastFilteredTrades, {
       remoteCount: lastRemoteTrades.length,
       filteredCount: lastFilteredTrades.length,

@@ -89,3 +89,24 @@ export interface VybeCandlesResponse {
   [key: string]: unknown;
 }
 
+/** Single holder from GET /v4/tokens/{mintAddress}/top-holders */
+export interface VybeTopHolder {
+  rank: number;
+  ownerAddress: string;
+  mintAddress: string;
+  balance: string;
+  valueUsd: string;
+  percentageOfSupplyHeld: number;
+  ownerName?: string | null;
+  ownerLogoUrl?: string | null;
+  tokenSymbol?: string | null;
+  tokenLogoUrl?: string | null;
+  [key: string]: unknown;
+}
+
+/** Response from GET /v4/tokens/{mintAddress}/top-holders */
+export interface VybeTopHoldersResponse {
+  data: VybeTopHolder[];
+  [key: string]: unknown;
+}
+

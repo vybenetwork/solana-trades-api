@@ -1,5 +1,5 @@
 /**
- * Persistent JSON cache for symbol and program-label lookups.
+ * Persistent JSON cache for symbol, program-label, and holder lookups.
  * Read from disk before each request; write to disk when a new record is added.
  * No startup load — next request sees updates made while the server is running.
  */
@@ -7,12 +7,23 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { VybeProgramsResponse } from './types/api.js';
+import type { VybeProgramsResponse, VybeTopHolder } from './types/api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const SYMBOL_CACHE_PATH = path.join(DATA_DIR, 'symbol-cache.json');
 const PROGRAM_CACHE_PATH = path.join(DATA_DIR, 'program-label-cache.json');
+const HOLDER_CACHE_PATH = path.join(DATA_DIR, 'holder-cache.json');
+
+/** TTL for holder cache: 3 hours (aligns with Vybe "updated every 3 hours"). */
+export const HOLDER_CACHE_TTL_MS = 3 * 60 * 60 * 1000;
+
+export interface HolderCacheEntry {
+  data: VybeTopHolder[];
+  fetchedAt: number;
+}
+
+export type HolderCache = Record<string, HolderCacheEntry>;
 
 function ensureDataDir(): void {
   if (!fs.existsSync(DATA_DIR)) {
@@ -50,4 +61,12 @@ export function readProgramCacheFromDisk(): Record<string, VybeProgramsResponse>
 
 export function writeProgramCacheToDisk(data: Record<string, VybeProgramsResponse>): void {
   writeJsonFile(PROGRAM_CACHE_PATH, data);
+}
+
+export function readHolderCacheFromDisk(): HolderCache {
+  return readJsonFile<HolderCache>(HOLDER_CACHE_PATH, {});
+}
+
+export function writeHolderCacheToDisk(data: HolderCache): void {
+  writeJsonFile(HOLDER_CACHE_PATH, data);
 }

@@ -15,7 +15,10 @@
 
       <section class="inputs panel">
         <div class="field">
-          <label for="mintAddress">Token mint (either side)</label>
+          <label for="mintAddress">
+            <span class="label-icon field-icon icon-tag" aria-hidden="true"></span>
+            Token mint (either side)
+          </label>
           <div class="field-control">
             <span class="field-icon icon-tag" aria-hidden="true"></span>
             <input
@@ -28,7 +31,10 @@
         </div>
 
         <div class="field">
-          <label for="timeStart">Start time</label>
+          <label for="timeStart">
+            <span class="label-icon field-icon icon-clock" aria-hidden="true"></span>
+            Start time
+          </label>
           <div class="field-control">
             <span class="field-icon icon-clock" aria-hidden="true"></span>
             <input type="datetime-local" id="timeStart" />
@@ -36,7 +42,10 @@
         </div>
 
         <div class="field">
-          <label for="timeEnd">End time</label>
+          <label for="timeEnd">
+            <span class="label-icon field-icon icon-clock" aria-hidden="true"></span>
+            End time
+          </label>
           <div class="field-control">
             <span class="field-icon icon-clock" aria-hidden="true"></span>
             <input type="datetime-local" id="timeEnd" />
@@ -44,7 +53,10 @@
         </div>
 
         <div class="field">
-          <label for="limit">Limit</label>
+          <label for="limit">
+            <span class="label-icon field-icon icon-hash" aria-hidden="true"></span>
+            Limit
+          </label>
           <div class="field-control">
             <span class="field-icon icon-hash" aria-hidden="true"></span>
             <select id="limit">
@@ -57,7 +69,10 @@
         </div>
 
         <div class="field">
-          <label for="sort">Sort</label>
+          <label for="sort">
+            <span class="label-icon field-icon icon-sort" aria-hidden="true"></span>
+            Sort
+          </label>
           <div class="field-control">
             <span class="field-icon icon-sort" aria-hidden="true"></span>
             <select id="sort">
@@ -70,7 +85,10 @@
         </div>
 
         <div class="field">
-          <label>Page(s)</label>
+          <label>
+            <span class="label-icon field-icon icon-pages" aria-hidden="true"></span>
+            Page(s)
+          </label>
           <div class="page-range">
             <div class="field-control">
               <span class="field-icon icon-pages" aria-hidden="true"></span>
@@ -84,11 +102,32 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="maxPages">Export max pages</label>
-          <div class="field-control">
-            <span class="field-icon icon-download" aria-hidden="true"></span>
-            <input type="number" id="maxPages" min="1" step="1" value="50" />
+        <div class="inputs-pair">
+          <div class="field">
+            <label for="maxPages">
+              <span class="label-icon field-icon icon-download" aria-hidden="true"></span>
+              Max pages
+            </label>
+            <div class="field-control">
+              <span class="field-icon icon-download" aria-hidden="true"></span>
+              <input type="number" id="maxPages" min="1" step="1" value="50" />
+            </div>
+          </div>
+          <div class="field field-switch field-switch--inputs">
+            <div class="field-switch-header">
+              <span class="label-icon field-icon icon-user" aria-hidden="true"></span>
+              <span class="field-switch-title">Top 1k holder labels</span>
+              <span class="field-switch-info icon-info-wrap" title="Fetch this token's top 1k holders and show labels (e.g. Top #5) next to authority/fee payer addresses in the table." aria-label="More info">
+                <span class="label-icon field-icon icon-info" aria-hidden="true" title="Fetch this token's top 1k holders and show labels (e.g. Top #5) next to authority/fee payer addresses in the table."></span>
+              </span>
+            </div>
+            <label class="trades-fetch-switch" title="Fetch this token's top 1k holders and show labels (e.g. Top #5) next to authority/fee payer addresses in the table.">
+              <input type="checkbox" id="labelFromTopHolders" class="trades-fetch-switch-input" aria-hidden="true">
+              <span class="trades-fetch-switch-track">
+                <span class="trades-fetch-switch-option" data-value="off">No labels</span>
+                <span class="trades-fetch-switch-option" data-value="on">Show labels</span>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -106,49 +145,70 @@
           <summary>Advanced filters (Vybe params)</summary>
           <div class="advanced-grid">
             <div class="field">
-              <label for="baseMintAddress">baseMintAddress</label>
+              <label for="baseMintAddress">
+                <span class="label-icon field-icon icon-tag" aria-hidden="true"></span>
+                baseMintAddress
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-tag" aria-hidden="true"></span>
                 <input type="text" id="baseMintAddress" placeholder="base token mint" />
               </div>
             </div>
             <div class="field">
-              <label for="quoteMintAddress">quoteMintAddress</label>
+              <label for="quoteMintAddress">
+                <span class="label-icon field-icon icon-tag" aria-hidden="true"></span>
+                quoteMintAddress
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-tag" aria-hidden="true"></span>
                 <input type="text" id="quoteMintAddress" placeholder="quote token mint" />
               </div>
             </div>
             <div class="field">
-              <label for="marketAddress">marketAddress</label>
+              <label for="marketAddress">
+                <span class="label-icon field-icon icon-market" aria-hidden="true"></span>
+                marketAddress
+              </label>
               <div class="field-control">
-                <span class="field-icon icon-link" aria-hidden="true"></span>
+                <span class="field-icon icon-market" aria-hidden="true"></span>
                 <input type="text" id="marketAddress" placeholder="market/pool address" />
               </div>
             </div>
             <div class="field">
-              <label for="programAddress">programAddress</label>
+              <label for="programAddress">
+                <span class="label-icon field-icon icon-grid" aria-hidden="true"></span>
+                programAddress
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-link" aria-hidden="true"></span>
                 <input type="text" id="programAddress" placeholder="DEX program id" />
               </div>
             </div>
             <div class="field">
-              <label for="authorityAddress">authorityAddress</label>
+              <label for="authorityAddress">
+                <span class="label-icon field-icon icon-user" aria-hidden="true"></span>
+                authorityAddress
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-user" aria-hidden="true"></span>
                 <input type="text" id="authorityAddress" placeholder="authority pubkey" />
               </div>
             </div>
             <div class="field">
-              <label for="feePayerAddress">feePayerAddress</label>
+              <label for="feePayerAddress">
+                <span class="label-icon field-icon icon-user" aria-hidden="true"></span>
+                feePayerAddress
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-user" aria-hidden="true"></span>
                 <input type="text" id="feePayerAddress" placeholder="fee payer pubkey" />
               </div>
             </div>
             <div class="field">
-              <label for="resolution">resolution</label>
+              <label for="resolution">
+                <span class="label-icon field-icon icon-grid" aria-hidden="true"></span>
+                resolution
+              </label>
               <div class="field-control">
                 <span class="field-icon icon-grid" aria-hidden="true"></span>
                 <input type="text" id="resolution" placeholder="(deprecated) e.g. 1h, 1d" />
@@ -256,54 +316,106 @@
           <h2>Local filters (no refetch)</h2>
         </div>
         <div class="local-filters">
-          <div class="field">
-            <label for="search">Search (signature/market/program/authority/fee payer)</label>
-            <div class="field-control">
-              <span class="field-icon icon-search" aria-hidden="true"></span>
-              <input type="text" id="search" placeholder="e.g. 5KJp… or Raydium program id" />
+          <h3 class="local-filters-subtitle">Global</h3>
+          <div class="local-filters-global">
+            <div class="local-filters-global-row">
+              <div class="field field-search">
+                <label for="search" title="Filter by signature, market, program, wallet or mint address (substring match).">
+                  <span class="label-icon field-icon icon-search" aria-hidden="true"></span>
+                  Search (signature, market, program, wallets, mints)
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-search" aria-hidden="true"></span>
+                  <input type="text" id="search" placeholder="e.g. 5KJp… or Raydium" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="localAuthority" title="Show only trades where the authority (signer) address contains this text.">
+                  <span class="label-icon field-icon icon-user" aria-hidden="true"></span>
+                  Authority contains
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-user" aria-hidden="true"></span>
+                  <input type="text" id="localAuthority" placeholder="authority address substring" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="localSignature" title="Show only trades where the transaction signature (TXID) contains this text.">
+                  <span class="label-icon field-icon icon-hash" aria-hidden="true"></span>
+                  TXID contains
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-hash" aria-hidden="true"></span>
+                  <input type="text" id="localSignature" placeholder="signature or txid substring" />
+                </div>
+              </div>
+            </div>
+            <div class="local-filters-global-row local-filters-row-type-checkbox">
+              <div class="field field-type">
+                <label for="filterType" title="Filter by trade direction: Buy (token in) or Sell (token out) for the analysed mint.">
+                  <span class="label-icon field-icon icon-sort" aria-hidden="true"></span>
+                  Type
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-sort" aria-hidden="true"></span>
+                  <select id="filterType">
+                    <option value="" selected>Any</option>
+                    <option value="Buy">Buy</option>
+                    <option value="Sell">Sell</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field field-switch">
+                <div class="field-switch-header">
+                  <span class="label-icon field-icon icon-user" aria-hidden="true"></span>
+                  <span class="field-switch-title">Authority = fee payer</span>
+                  <span class="field-switch-info icon-info-wrap" title="Show only trades where the signer (authority) is also the fee payer." aria-label="More info">
+                    <span class="label-icon field-icon icon-info" aria-hidden="true" title="Show only trades where the signer (authority) is also the fee payer."></span>
+                  </span>
+                </div>
+                <label class="trades-fetch-switch" title="Show only trades where the signer (authority) is also the fee payer.">
+                  <input type="checkbox" id="authorityEqualsFeePayer" class="trades-fetch-switch-input" aria-hidden="true">
+                  <span class="trades-fetch-switch-track">
+                    <span class="trades-fetch-switch-option" data-value="off">Any signer</span>
+                    <span class="trades-fetch-switch-option" data-value="on">Same only</span>
+                  </span>
+                </label>
+              </div>
+              <div class="field field-program">
+                <label for="localProgram" title="Show only trades where the program ID contains this text (e.g. Raydium, Orca).">
+                  <span class="label-icon field-icon icon-grid" aria-hidden="true"></span>
+                  Program contains
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-grid" aria-hidden="true"></span>
+                  <input type="text" id="localProgram" placeholder="program id substring" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="localMarket" title="Show only trades where the market/pool address contains this text.">
+                  <span class="label-icon field-icon icon-market" aria-hidden="true"></span>
+                  Market contains
+                </label>
+                <div class="field-control">
+                  <span class="field-icon icon-market" aria-hidden="true"></span>
+                  <input type="text" id="localMarket" placeholder="market/pool substring" />
+                </div>
+              </div>
             </div>
           </div>
-          <div class="field">
-            <label for="localMarket">Market contains</label>
-            <div class="field-control">
-              <span class="field-icon icon-link" aria-hidden="true"></span>
-              <input type="text" id="localMarket" placeholder="market/pool address substring" />
-            </div>
-          </div>
-          <div class="field">
-            <label for="localProgram">Program contains</label>
-            <div class="field-control">
-              <span class="field-icon icon-link" aria-hidden="true"></span>
-              <input type="text" id="localProgram" placeholder="DEX program id substring" />
-            </div>
-          </div>
-          <div class="field">
-            <label for="minPrice">Min price</label>
-            <div class="field-control">
-              <span class="field-icon icon-dollar" aria-hidden="true"></span>
-              <input type="number" id="minPrice" step="any" placeholder="0" />
-            </div>
-          </div>
-          <div class="field">
-            <label for="minBaseSize">Min baseSize</label>
-            <div class="field-control">
-              <span class="field-icon icon-scale" aria-hidden="true"></span>
-              <input type="number" id="minBaseSize" step="any" placeholder="0" />
-            </div>
-          </div>
-          <div class="field">
-            <label for="minQuoteSize">Min quoteSize</label>
-            <div class="field-control">
-              <span class="field-icon icon-scale" aria-hidden="true"></span>
-              <input type="number" id="minQuoteSize" step="any" placeholder="0" />
-            </div>
-          </div>
+          <h3 class="local-filters-subtitle">Per-quote mint (min/max size, spam filter)</h3>
+          <p class="meta">Set min/max quote size per quote token. Filled after fetch from loaded trades.</p>
+          <div id="perQuoteFiltersContainer" class="local-filters-dynamic"></div>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-header">
           <h2>Trades</h2>
+          <div class="section-loading" id="tradesLoading" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
           <span class="section-error" id="tradesError" hidden aria-hidden="true"></span>
         </div>
         <p class="meta" id="tradesMeta">—</p>

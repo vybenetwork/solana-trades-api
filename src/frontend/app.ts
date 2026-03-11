@@ -60,6 +60,7 @@ const fetchBtn = document.getElementById('fetchBtn') as HTMLButtonElement;
 const exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
 const exportAllBtn = document.getElementById('exportAllBtn') as HTMLButtonElement;
 const loadingIndicator = document.getElementById('loadingIndicator') as HTMLElement;
+const tradesLoading = document.getElementById('tradesLoading') as HTMLElement;
 
 const baseMintAddressInput = document.getElementById('baseMintAddress') as HTMLInputElement;
 const quoteMintAddressInput = document.getElementById('quoteMintAddress') as HTMLInputElement;
@@ -72,9 +73,13 @@ const resolutionInput = document.getElementById('resolution') as HTMLInputElemen
 const searchInput = document.getElementById('search') as HTMLInputElement;
 const localMarketInput = document.getElementById('localMarket') as HTMLInputElement;
 const localProgramInput = document.getElementById('localProgram') as HTMLInputElement;
-const minPriceInput = document.getElementById('minPrice') as HTMLInputElement;
-const minBaseSizeInput = document.getElementById('minBaseSize') as HTMLInputElement;
-const minQuoteSizeInput = document.getElementById('minQuoteSize') as HTMLInputElement;
+const localSignatureInput = document.getElementById('localSignature') as HTMLInputElement;
+const localFeePayerInput = document.getElementById('localFeePayer') as HTMLInputElement;
+const localAuthorityInput = document.getElementById('localAuthority') as HTMLInputElement;
+const filterTypeSelect = document.getElementById('filterType') as HTMLSelectElement;
+const authorityEqualsFeePayerCheckbox = document.getElementById('authorityEqualsFeePayer') as HTMLInputElement;
+const labelFromTopHoldersCheckbox = document.getElementById('labelFromTopHolders') as HTMLInputElement;
+const perQuoteFiltersContainer = document.getElementById('perQuoteFiltersContainer') as HTMLElement;
 
 const tradesError = document.getElementById('tradesError') as HTMLElement;
 const tradesMeta = document.getElementById('tradesMeta') as HTMLElement;
@@ -103,6 +108,9 @@ const topProgramsBody = document.getElementById('topProgramsBody') as HTMLElemen
 const topMarketsBody = document.getElementById('topMarketsBody') as HTMLElement;
 const topQuotesBody = document.getElementById('topQuotesBody') as HTMLElement;
 
+/** Vybe explorer: wallet links only (vybe.fyi supports wallets, not markets/programs/mints). */
+const VYBE_ACCOUNT = 'https://vybe.fyi/wallet/';
+/** Solscan for transactions, markets, programs, and token/mint accounts. */
 const SOLSCAN_TX = 'https://solscan.io/tx/';
 const SOLSCAN_ACCOUNT = 'https://solscan.io/account/';
 
@@ -111,9 +119,20 @@ const FETCH_RETRY_DELAY_MS = 2000;
 
 let lastRemoteTrades: VybeTrade[] = [];
 let lastFilteredTrades: VybeTrade[] = [];
+// Local-filtered trades excluding per-quote rules. Used to keep the per-quote table stable while tweaking per-quote min/max.
+let lastFilteredTradesForPerQuote: VybeTrade[] = [];
 let lastBaseSymbol: string | undefined;
 const quoteSymbolCache: Record<string, string> = {};
 const programLabelCache: Record<string, string> = {};
+/** Wallet address -> label (e.g. "Top #5" or ownerName from top holders). */
+const holderLabelCache: Record<string, string> = {};
+
+/** Per-quote-mint filter rules (key = quote mint address). Empty max = no cap. */
+const perQuoteRules: Record<string, { minQuoteSize?: number; maxQuoteSize?: number; minPrice?: number; maxPrice?: number }> = {};
+/** Persist per-quote table expanded/collapsed state across rebuilds. */
+let perQuoteExpanded = false;
+/** Quote mints excluded via per-quote table checkbox. */
+const excludedQuoteMints = new Set<string>();
 
 const STABLE_QUOTE_SYMBOLS = new Set(['USD', 'USDC', 'USDT', 'PYUSD', 'USD1']);
 
@@ -174,6 +193,14 @@ function truncate(s: string | undefined, front = 4, back = 4): string {
   if (!s) return '—';
   if (s.length <= front + back + 4) return s;
   return s.slice(0, front) + '....' + s.slice(-back);
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function fmtNum(n: number, maxFrac: number): string {
@@ -303,6 +330,14 @@ function isStableQuoteSymbol(sym: string): boolean {
   return STABLE_QUOTE_SYMBOLS.has(sym.toUpperCase());
 }
 
+function vybeLinkAccount(addr: string | undefined, text?: string): string {
+  if (!addr) return '—';
+  const href = VYBE_ACCOUNT + encodeURIComponent(addr);
+  const label = text ?? truncate(addr, 3, 3);
+  return `<a href="${href}" target="_blank" rel="noopener noreferrer" title="${addr}">${label}</a>`;
+}
+
+/** Solscan link for accounts (markets, programs, mints). Use vybeLinkAccount for wallets only. */
 function solscanLinkAccount(addr: string | undefined, text?: string): string {
   if (!addr) return '—';
   const href = SOLSCAN_ACCOUNT + encodeURIComponent(addr);
@@ -331,6 +366,30 @@ function parseNumberOrUndefined(v: string): number | undefined {
   if (!raw) return undefined;
   const n = Number(raw);
   return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Format a number for display in per-quote inputs:
+ * - >= 100: 0 decimals
+ * - 1 to 100: 2 decimals
+ * - < 1: 4 decimals, unless first non-zero is after more than 3 zeros (then show 3 non-zero digits only)
+ */
+function formatDecimalForDisplay(n: number): string {
+  if (!Number.isFinite(n)) return String(n);
+  const abs = Math.abs(n);
+  if (abs >= 100) return String(Math.round(n));
+  if (abs >= 1) return n.toFixed(2);
+  if (abs === 0) return '0';
+  const s = abs < 1e-4 ? abs.toFixed(14) : abs.toString();
+  const dot = s.indexOf('.');
+  const afterDot = dot >= 0 ? s.slice(dot + 1) : '';
+  let zeros = 0;
+  for (const c of afterDot) {
+    if (c === '0') zeros++;
+    else break;
+  }
+  if (zeros >= 3) return n.toFixed(zeros + 3);
+  return n.toFixed(4);
 }
 
 function parseIntOrUndefined(v: string): number | undefined {
@@ -415,13 +474,16 @@ function buildTradesQueryForSummary(): string {
   return params.toString();
 }
 
-function applyLocalFilters(trades: VybeTrade[]): VybeTrade[] {
+function applyLocalFiltersCore(trades: VybeTrade[], includePerQuoteRules: boolean, includeExclusions: boolean): VybeTrade[] {
   const search = searchInput.value.trim().toLowerCase();
   const localMarket = localMarketInput.value.trim().toLowerCase();
   const localProgram = localProgramInput.value.trim().toLowerCase();
-  const minPrice = parseNumberOrUndefined(minPriceInput.value);
-  const minBaseSize = parseNumberOrUndefined(minBaseSizeInput.value);
-  const minQuoteSize = parseNumberOrUndefined(minQuoteSizeInput.value);
+  const localSignature = (localSignatureInput?.value ?? '').trim().toLowerCase();
+  const localFeePayer = (localFeePayerInput?.value ?? '').trim().toLowerCase();
+  const localAuthority = (localAuthorityInput?.value ?? '').trim().toLowerCase();
+  const filterType = (filterTypeSelect?.value ?? '').trim();
+  const authorityEqualsFeePayer = authorityEqualsFeePayerCheckbox?.checked === true;
+  const analysedMint = mintAddressInput.value.trim();
 
   return trades.filter((t) => {
     if (search) {
@@ -440,6 +502,13 @@ function applyLocalFilters(trades: VybeTrade[]): VybeTrade[] {
       if (!hay.includes(search)) return false;
     }
 
+    if (filterType && analysedMint) {
+      const baseMint = (t.baseMintAddress ?? '').trim();
+      const quoteMint = (t.quoteMintAddress ?? '').trim();
+      const type = baseMint === analysedMint ? 'Sell' : quoteMint === analysedMint ? 'Buy' : null;
+      if (type !== filterType) return false;
+    }
+
     if (localMarket) {
       const m = (t.marketAddress ?? '').toLowerCase();
       if (!m.includes(localMarket)) return false;
@@ -450,23 +519,410 @@ function applyLocalFilters(trades: VybeTrade[]): VybeTrade[] {
       if (!p.includes(localProgram)) return false;
     }
 
-    if (minPrice != null) {
-      const p = Number(t.price);
-      if (!Number.isFinite(p) || p < minPrice) return false;
+    if (localSignature) {
+      const sig = (t.signature ?? '').toLowerCase();
+      if (!sig.includes(localSignature)) return false;
     }
 
-    if (minBaseSize != null) {
-      const s = Number(t.baseSize);
-      if (!Number.isFinite(s) || s < minBaseSize) return false;
+    if (localFeePayer) {
+      const fp = (t.feePayerAddress ?? '').toLowerCase();
+      if (!fp.includes(localFeePayer)) return false;
     }
 
-    if (minQuoteSize != null) {
-      const s = Number(t.quoteSize);
-      if (!Number.isFinite(s) || s < minQuoteSize) return false;
+    if (localAuthority) {
+      const auth = (t.authorityAddress ?? '').toLowerCase();
+      if (!auth.includes(localAuthority)) return false;
+    }
+
+    if (authorityEqualsFeePayer) {
+      const auth = (t.authorityAddress ?? '').trim();
+      const fee = (t.feePayerAddress ?? '').trim();
+      if (!auth || !fee || auth !== fee) return false;
+    }
+
+    // Exclusions from per-quote table.
+    if (includeExclusions && analysedMint) {
+      const other = otherMint(t, analysedMint).trim();
+      if (other && excludedQuoteMints.has(other)) return false;
+    }
+
+    if (includePerQuoteRules) {
+      const quoteMint = otherMint(t, analysedMint || '');
+      const ruleQ = quoteMint ? perQuoteRules[quoteMint] : undefined;
+      if (ruleQ) {
+        const quoteMintAddr = (t.quoteMintAddress ?? '').trim();
+        const sizeQ = quoteMintAddr === quoteMint ? Number(t.quoteSize) : Number(t.baseSize);
+        const priceQ =
+          quoteMintAddr === quoteMint
+            ? Number(t.price)
+            : (() => {
+                const p = Number(t.price);
+                return Number.isFinite(p) && p !== 0 ? 1 / p : NaN;
+              })();
+        if (ruleQ.minQuoteSize != null) {
+          if (!Number.isFinite(sizeQ) || sizeQ < ruleQ.minQuoteSize) return false;
+        }
+        if (ruleQ.maxQuoteSize != null) {
+          if (!Number.isFinite(sizeQ) || sizeQ > ruleQ.maxQuoteSize) return false;
+        }
+        if (ruleQ.minPrice != null) {
+          if (!Number.isFinite(priceQ) || priceQ < ruleQ.minPrice) return false;
+        }
+        if (ruleQ.maxPrice != null) {
+          if (!Number.isFinite(priceQ) || priceQ > ruleQ.maxPrice) return false;
+        }
+      }
     }
 
     return true;
   });
+}
+
+function applyLocalFilters(trades: VybeTrade[]): VybeTrade[] {
+  return applyLocalFiltersCore(trades, true, true);
+}
+
+function applyLocalFiltersWithoutPerQuoteRules(trades: VybeTrade[]): VybeTrade[] {
+  return applyLocalFiltersCore(trades, false, true);
+}
+
+function applyLocalFiltersWithoutExclusionsAndPerQuoteRules(trades: VybeTrade[]): VybeTrade[] {
+  return applyLocalFiltersCore(trades, false, false);
+}
+
+const TOP_QUOTE_MINTS_FOR_FILTER = 10;
+
+/** Observed min/max from last fetch, used to lock per-quote inputs. */
+let quoteBounds: Record<string, { minQuoteSize: number; maxQuoteSize: number; minPrice: number; maxPrice: number }> = {};
+
+/**
+ * Build dynamic per-quote filter rows from lastFilteredTradesForPerQuote.
+ * Preserves existing rule values. Min/max inputs are locked to observed range in the filtered set.
+ * Rebuilds when local filters change so counts and bounds reflect the current filtered trades.
+ */
+function buildLocalFilterRows(): void {
+  if (!perQuoteFiltersContainer) return;
+  const baseMint = mintAddressInput.value.trim();
+
+  // Total counts from loaded trades (does not change with local filters).
+  const totalQuoteCounts = new Map<string, number>();
+  for (const t of lastRemoteTrades) {
+    const q = otherMint(t, baseMint);
+    if (q && q !== baseMint) totalQuoteCounts.set(q, (totalQuoteCounts.get(q) ?? 0) + 1);
+  }
+
+  // Filtered counts from the current trades table (includes per-quote rules).
+  const filteredQuoteCounts = new Map<string, number>();
+  for (const t of lastFilteredTrades) {
+    const q = otherMint(t, baseMint);
+    if (q && q !== baseMint) filteredQuoteCounts.set(q, (filteredQuoteCounts.get(q) ?? 0) + 1);
+  }
+
+  const quoteCounts = new Map<string, number>();
+  const quoteStats = new Map<
+    string,
+    { minQuoteSize: number; maxQuoteSize: number; minPrice: number; maxPrice: number }
+  >();
+
+  // Bounds are computed from local filters but IGNORING exclusions and per-quote rules,
+  // so excluded rows keep their place and still show meaningful min/max placeholders.
+  const tradesForBounds = applyLocalFiltersWithoutExclusionsAndPerQuoteRules(lastRemoteTrades);
+  for (const t of tradesForBounds) {
+    const q = otherMint(t, baseMint);
+    if (q && q !== baseMint) {
+      quoteCounts.set(q, (quoteCounts.get(q) ?? 0) + 1);
+      const quoteMintAddr = (t.quoteMintAddress ?? '').trim();
+      const baseMintAddr = (t.baseMintAddress ?? '').trim();
+      let sizeForQ: number;
+      let priceForQ: number;
+      if (quoteMintAddr === q) {
+        sizeForQ = Number(t.quoteSize);
+        priceForQ = Number(t.price);
+      } else {
+        sizeForQ = Number(t.baseSize);
+        const p = Number(t.price);
+        priceForQ = Number.isFinite(p) && p !== 0 ? 1 / p : NaN;
+      }
+      const cur = quoteStats.get(q);
+      if (!cur) {
+        quoteStats.set(q, {
+          minQuoteSize: Number.isFinite(sizeForQ) ? sizeForQ : 0,
+          maxQuoteSize: Number.isFinite(sizeForQ) ? sizeForQ : 0,
+          minPrice: Number.isFinite(priceForQ) ? priceForQ : 0,
+          maxPrice: Number.isFinite(priceForQ) ? priceForQ : 0,
+        });
+      } else {
+        if (Number.isFinite(sizeForQ)) {
+          cur.minQuoteSize = Math.min(cur.minQuoteSize, sizeForQ);
+          cur.maxQuoteSize = Math.max(cur.maxQuoteSize, sizeForQ);
+        }
+        if (Number.isFinite(priceForQ)) {
+          cur.minPrice = Math.min(cur.minPrice, priceForQ);
+          cur.maxPrice = Math.max(cur.maxPrice, priceForQ);
+        }
+      }
+    }
+  }
+
+  quoteBounds = Object.fromEntries(quoteStats);
+
+  // Use TOTAL counts so excluded rows don't disappear/reorder.
+  // We sort all quote mints by total count, but we do NOT slice here so that
+  // "Show all" truly shows all mints, even those with a single trade.
+  const topQuotes = [...totalQuoteCounts.entries()].sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+
+  function quoteLabel(mint: string): string {
+    return quoteSymbolCache[mint] || HARDCODED_QUOTE_MINTS[mint] || truncate(mint, 4, 4);
+  }
+  function quoteLabelShort(mint: string): string {
+    const sym = quoteSymbolCache[mint] || HARDCODED_QUOTE_MINTS[mint];
+    // If symbol lookup failed and echoed the mint (or missing), show XX...XX.
+    if (!sym || sym === mint) {
+      if (mint.length <= 6) return mint;
+      return `${mint.slice(0, 2)}...${mint.slice(-2)}`;
+    }
+    // Match trades table: show SOL (not wSOL) and truncate to 5 chars.
+    return symbolMax5(displaySymbol(sym));
+  }
+
+  /** Step = 1 in the last displayed digit (e.g. 0.0021 → 0.0001, 0.0000042 → 0.0000001). */
+  function stepFor(v: number): number {
+    if (!Number.isFinite(v)) return 0.01;
+    const abs = Math.abs(v);
+    if (abs >= 100) return 1;
+    if (abs >= 1) return 0.01;
+    if (abs === 0) return 0.0001;
+    const s = abs < 1e-4 ? abs.toFixed(14) : abs.toString();
+    const dot = s.indexOf('.');
+    const afterDot = dot >= 0 ? s.slice(dot + 1) : '';
+    let zeros = 0;
+    for (const c of afterDot) {
+      if (c === '0') zeros++;
+      else break;
+    }
+    const decimals = zeros >= 3 ? zeros + 2 : 4;
+    return Math.pow(10, -decimals);
+  }
+
+  function clampQuote(qMint: string, minQ?: number, maxQ?: number, minP?: number, maxP?: number) {
+    const b = quoteBounds[qMint];
+    if (!b) return { minQuoteSize: minQ, maxQuoteSize: maxQ, minPrice: minP, maxPrice: maxP };
+    return {
+      minQuoteSize: minQ != null ? Math.max(b.minQuoteSize, minQ) : undefined,
+      maxQuoteSize: maxQ != null ? Math.min(b.maxQuoteSize, maxQ) : undefined,
+      minPrice: minP != null ? Math.max(b.minPrice, minP) : undefined,
+      maxPrice: maxP != null ? Math.min(b.maxPrice, maxP) : undefined,
+    };
+  }
+
+  perQuoteFiltersContainer.innerHTML = '';
+  if (topQuotes.length > 0) {
+    const table = document.createElement('table');
+    table.innerHTML = `<thead><tr><th>Quote</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody></tbody>`;
+    const tbody = table.querySelector('tbody')!;
+    const TOP_VISIBLE = 3;
+    for (let i = 0; i < topQuotes.length; i++) {
+      const [quoteMint, count] = topQuotes[i];
+      const b = quoteBounds[quoteMint];
+      const r = perQuoteRules[quoteMint] ?? {};
+      const clamped = clampQuote(quoteMint, r.minQuoteSize, r.maxQuoteSize, r.minPrice, r.maxPrice);
+      if (clamped.minQuoteSize != null || clamped.maxQuoteSize != null || clamped.minPrice != null || clamped.maxPrice != null) {
+        perQuoteRules[quoteMint] = clamped;
+      } else {
+        delete perQuoteRules[quoteMint];
+      }
+      const tr = document.createElement('tr');
+      const isExcluded = excludedQuoteMints.has(quoteMint);
+      const minQ = b?.minQuoteSize ?? '';
+      const maxQ = b?.maxQuoteSize ?? '';
+      const minP = b?.minPrice ?? '';
+      const maxP = b?.maxPrice ?? '';
+      const fmt = (x: number | '' | undefined) => (x !== '' && x != null && Number.isFinite(x) ? formatDecimalForDisplay(x) : '');
+      const quoteSym = quoteLabelShort(quoteMint);
+      const totalForMint = totalQuoteCounts.get(quoteMint) ?? count;
+      const filteredForMint = filteredQuoteCounts.get(quoteMint) ?? 0;
+      const cell = (inputHtml: string, currency: string, wrapClass: string) =>
+        `<div class="per-quote-cell"><div class="per-quote-input-wrap ${wrapClass}">${inputHtml}<span class="per-quote-currency">${currency}</span><div class="per-quote-spinners"><button type="button" class="per-quote-spin per-quote-spin-up" aria-label="Increase"></button><button type="button" class="per-quote-spin per-quote-spin-down" aria-label="Decrease"></button></div></div></div>`;
+      const inp = (attr: string, ph: string, val: string, dmin: string, dmax: string) =>
+        `<input type="number" step="any" placeholder="${ph}" ${attr} data-min="${dmin}" data-max="${dmax}" value="${val}" />`;
+      tr.innerHTML = `
+        <td title="${quoteMint}"><div>${quoteSym}</div><div class="meta">(${isExcluded ? 0 : filteredForMint}/${totalForMint})</div></td>
+        <td style="text-align:center"><label class="per-quote-status"><input type="checkbox" class="per-quote-exclude" ${isExcluded ? 'checked' : ''} aria-label="Exclude ${quoteSym}" /><span class="per-quote-status-text">${isExcluded ? 'Excluded' : 'Included'}</span></label></td>
+        <td>${cell(inp('data-quote-min-q', fmt(minQ), fmt(clamped.minQuoteSize), String(minQ), String(maxQ)), quoteSym, 'per-quote-is-min')}</td>
+        <td>${cell(inp('data-quote-max-q', fmt(maxQ), fmt(clamped.maxQuoteSize), String(minQ), String(maxQ)), quoteSym, 'per-quote-is-max')}</td>
+        <td>${cell(inp('data-quote-min-p', fmt(minP), fmt(clamped.minPrice), String(b?.minPrice ?? ''), String(b?.maxPrice ?? '')), quoteSym, 'per-quote-is-min')}</td>
+        <td>${cell(inp('data-quote-max-p', fmt(maxP), fmt(clamped.maxPrice), String(b?.minPrice ?? ''), String(b?.maxPrice ?? '')), quoteSym, 'per-quote-is-max')}</td>
+      `;
+      tr.dataset.quoteMint = quoteMint;
+      tr.classList.toggle('per-quote-row-excluded', isExcluded);
+      if (i >= TOP_VISIBLE) {
+        tr.classList.add('per-quote-row-collapsible');
+        if (!perQuoteExpanded) tr.classList.add('per-quote-row-hidden');
+      }
+      const getValOrPlaceholder = (selector: string): number | undefined => {
+        const el = tr.querySelector(selector) as HTMLInputElement | null;
+        if (!el) return undefined;
+        return parseNumberOrUndefined(el.value) ?? parseNumberOrUndefined(el.placeholder);
+      };
+      const updateSpinners = () => {
+        const wraps = tr.querySelectorAll('.per-quote-input-wrap');
+        wraps.forEach((wrapEl) => {
+          const wrap = wrapEl as HTMLElement;
+          const input = wrap.querySelector('input[type="number"]') as HTMLInputElement | null;
+          const up = wrap.querySelector('.per-quote-spin-up') as HTMLButtonElement | null;
+          const down = wrap.querySelector('.per-quote-spin-down') as HTMLButtonElement | null;
+          if (!input || !up || !down) return;
+
+          if (excludedQuoteMints.has(quoteMint)) {
+            up.disabled = true;
+            down.disabled = true;
+            wrap.classList.add('per-quote-wrap-disabled');
+            input.disabled = true;
+            return;
+          }
+
+          const v = parseNumberOrUndefined(input.value) ?? parseNumberOrUndefined(input.placeholder) ?? 0;
+          const step = stepFor(v);
+
+          const minAbs = parseNumberOrUndefined(input.getAttribute('data-min') || '') ?? -Infinity;
+          const maxAbs = parseNumberOrUndefined(input.getAttribute('data-max') || '') ?? Infinity;
+
+          // Identify opposite constraints (keep a one-step gap).
+          let minOpp: number | undefined;
+          let maxOpp: number | undefined;
+          if (input.hasAttribute('data-quote-min-q')) maxOpp = getValOrPlaceholder('[data-quote-max-q]');
+          else if (input.hasAttribute('data-quote-max-q')) minOpp = getValOrPlaceholder('[data-quote-min-q]');
+          else if (input.hasAttribute('data-quote-min-p')) maxOpp = getValOrPlaceholder('[data-quote-max-p]');
+          else if (input.hasAttribute('data-quote-max-p')) minOpp = getValOrPlaceholder('[data-quote-min-p]');
+
+          const maxAllowed = maxOpp != null ? Math.min(maxAbs, maxOpp - step) : maxAbs;
+          const minAllowed = minOpp != null ? Math.max(minAbs, minOpp + step) : minAbs;
+
+          up.disabled = !(Number.isFinite(v) ? v + step <= maxAllowed : true);
+          down.disabled = !(Number.isFinite(v) ? v - step >= minAllowed : true);
+          const wrapDisabled = up.disabled && down.disabled;
+          wrap.classList.toggle('per-quote-wrap-disabled', wrapDisabled);
+          input.disabled = wrapDisabled;
+        });
+      };
+      const sync = () => {
+        const minQVal = parseNumberOrUndefined((tr.querySelector('[data-quote-min-q]') as HTMLInputElement)?.value);
+        const maxQVal = parseNumberOrUndefined((tr.querySelector('[data-quote-max-q]') as HTMLInputElement)?.value);
+        const minPVal = parseNumberOrUndefined((tr.querySelector('[data-quote-min-p]') as HTMLInputElement)?.value);
+        const maxPVal = parseNumberOrUndefined((tr.querySelector('[data-quote-max-p]') as HTMLInputElement)?.value);
+        const clamped = clampQuote(quoteMint, minQVal, maxQVal, minPVal, maxPVal);
+        if (clamped.minQuoteSize != null || clamped.maxQuoteSize != null || clamped.minPrice != null || clamped.maxPrice != null) {
+          perQuoteRules[quoteMint] = clamped;
+        } else {
+          delete perQuoteRules[quoteMint];
+        }
+        const minQInp = tr.querySelector('[data-quote-min-q]') as HTMLInputElement;
+        const maxQInp = tr.querySelector('[data-quote-max-q]') as HTMLInputElement;
+        const minPInp = tr.querySelector('[data-quote-min-p]') as HTMLInputElement;
+        const maxPInp = tr.querySelector('[data-quote-max-p]') as HTMLInputElement;
+        if (minQInp && clamped.minQuoteSize != null && minQVal != null && minQVal < (quoteBounds[quoteMint]?.minQuoteSize ?? minQVal)) minQInp.value = formatDecimalForDisplay(clamped.minQuoteSize);
+        if (maxQInp && clamped.maxQuoteSize != null && maxQVal != null && maxQVal > (quoteBounds[quoteMint]?.maxQuoteSize ?? maxQVal)) maxQInp.value = formatDecimalForDisplay(clamped.maxQuoteSize);
+        if (minPInp && clamped.minPrice != null && minPVal != null && minPVal < (quoteBounds[quoteMint]?.minPrice ?? minPVal)) minPInp.value = formatDecimalForDisplay(clamped.minPrice);
+        if (maxPInp && clamped.maxPrice != null && maxPVal != null && maxPVal > (quoteBounds[quoteMint]?.maxPrice ?? maxPVal)) maxPInp.value = formatDecimalForDisplay(clamped.maxPrice);
+        updateSpinners();
+        onLocalFilterChange();
+      };
+      tr.querySelectorAll('input').forEach((el) => {
+        const inp = el as HTMLInputElement;
+        const mn = inp.getAttribute('data-min');
+        const mx = inp.getAttribute('data-max');
+        if (mn !== null && mn !== '') inp.setAttribute('min', mn);
+        if (mx !== null && mx !== '') inp.setAttribute('max', mx);
+        el.addEventListener('input', sync);
+      });
+      tr.querySelectorAll('.per-quote-spin-up').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const wrap = (btn as HTMLElement).closest('.per-quote-input-wrap');
+          if ((btn as HTMLButtonElement).disabled) return;
+          const input = wrap?.querySelector('input[type="number"]') as HTMLInputElement | null;
+          if (!input) return;
+          const v = parseNumberOrUndefined(input.value) ?? parseNumberOrUndefined(input.placeholder) ?? 0;
+          const step = stepFor(v);
+          let next = v + step;
+          // Keep at least one step away from the opposite bound.
+          if (input.hasAttribute('data-quote-min-q')) {
+            const maxV = getValOrPlaceholder('[data-quote-max-q]');
+            if (maxV != null) next = Math.min(next, maxV - step);
+          } else if (input.hasAttribute('data-quote-min-p')) {
+            const maxV = getValOrPlaceholder('[data-quote-max-p]');
+            if (maxV != null) next = Math.min(next, maxV - step);
+          }
+          input.value = formatDecimalForDisplay(next);
+          sync();
+        });
+      });
+      tr.querySelectorAll('.per-quote-spin-down').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const wrap = (btn as HTMLElement).closest('.per-quote-input-wrap');
+          if ((btn as HTMLButtonElement).disabled) return;
+          const input = wrap?.querySelector('input[type="number"]') as HTMLInputElement | null;
+          if (!input) return;
+          const v = parseNumberOrUndefined(input.value) ?? parseNumberOrUndefined(input.placeholder) ?? 0;
+          const step = stepFor(v);
+          let next = v - step;
+          // Keep at least one step away from the opposite bound.
+          if (input.hasAttribute('data-quote-max-q')) {
+            const minV = getValOrPlaceholder('[data-quote-min-q]');
+            if (minV != null) next = Math.max(next, minV + step);
+          } else if (input.hasAttribute('data-quote-max-p')) {
+            const minV = getValOrPlaceholder('[data-quote-min-p]');
+            if (minV != null) next = Math.max(next, minV + step);
+          }
+          input.value = formatDecimalForDisplay(next);
+          sync();
+        });
+      });
+      const excludeCb = tr.querySelector('.per-quote-exclude') as HTMLInputElement | null;
+      const statusText = tr.querySelector('.per-quote-status-text') as HTMLElement | null;
+      if (excludeCb) {
+        const updateStatusText = () => {
+          if (!statusText) return;
+          statusText.textContent = excludeCb.checked ? 'Excluded' : 'Included';
+        };
+        updateStatusText();
+        excludeCb.addEventListener('change', () => {
+          if (excludeCb.checked) {
+            excludedQuoteMints.add(quoteMint);
+            delete perQuoteRules[quoteMint];
+          } else {
+            excludedQuoteMints.delete(quoteMint);
+          }
+          updateStatusText();
+          onLocalFilterChange();
+        });
+      }
+      // Initialize spinner enabled/disabled state without rebuilding.
+      updateSpinners();
+      tbody.appendChild(tr);
+    }
+    if (topQuotes.length > TOP_VISIBLE) {
+      const buttonRow = document.createElement('tr');
+      buttonRow.className = 'per-quote-show-all-row';
+      const td = document.createElement('td');
+      td.colSpan = 6;
+      td.style.textAlign = 'center';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'per-quote-show-all-btn';
+      const total = topQuotes.length;
+      btn.textContent = perQuoteExpanded ? 'Show less' : `Show all (${total} total)`;
+      btn.addEventListener('click', () => {
+        perQuoteExpanded = !perQuoteExpanded;
+        const collapsible = tbody.querySelectorAll('tr.per-quote-row-collapsible');
+        collapsible.forEach((row) => row.classList.toggle('per-quote-row-hidden', !perQuoteExpanded));
+        btn.textContent = perQuoteExpanded ? 'Show less' : `Show all (${total} total)`;
+      });
+      td.appendChild(btn);
+      buttonRow.appendChild(td);
+      tbody.appendChild(buttonRow);
+    }
+    perQuoteFiltersContainer.appendChild(table);
+  }
 }
 
 function renderTokenEmpty(): void {
@@ -635,6 +1091,35 @@ async function ensureProgramLabels(trades: VybeTrade[]): Promise<void> {
   } catch {
     // keep WELL_KNOWN or address fallback
   }
+}
+
+/**
+ * Fetch holder labels for authority/fee payer wallets (analysed token's top 1k).
+ * Runs async after trades load; merges into holderLabelCache and re-renders table when done.
+ */
+function fetchHolderLabels(mint: string, trades: VybeTrade[]): void {
+  const wallets = new Set<string>();
+  for (const t of trades) {
+    const a = (t.authorityAddress ?? '').trim();
+    const f = (t.feePayerAddress ?? '').trim();
+    if (a) wallets.add(a);
+    if (f) wallets.add(f);
+  }
+  const list = [...wallets];
+  if (!mint || list.length === 0) return;
+  const params = new URLSearchParams({ wallets: list.join(',') });
+  fetchWithRetry(`/api/tokens/${encodeURIComponent(mint)}/holder-labels?${params}`)
+    .then((r) => r.json())
+    .then((body: { labels?: Record<string, string> }) => {
+      const labels = body.labels ?? {};
+      Object.assign(holderLabelCache, labels);
+      renderTrades(lastFilteredTrades, {
+        remoteCount: lastRemoteTrades.length,
+        filteredCount: lastFilteredTrades.length,
+        query: '',
+      });
+    })
+    .catch(() => {});
 }
 
 /** Program column: first word only, or first + second word if second is all CAPS and 4–5 chars (e.g. CLMM, CPMM). */
@@ -867,8 +1352,11 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
             : '—';
           const authority = (t.authorityAddress ?? '').trim();
           const feePayer = (t.feePayerAddress ?? '').trim();
+          const showHolderLabels = labelFromTopHoldersCheckbox?.checked === true;
+          const authLabel = showHolderLabels && authority && holderLabelCache[authority] ? `<span class="holder-label">${escapeHtml(holderLabelCache[authority])}</span> ` : '';
+          const feeLabel = showHolderLabels && feePayer && holderLabelCache[feePayer] ? `<span class="holder-label">${escapeHtml(holderLabelCache[feePayer])}</span> ` : '';
           const feePayerLink = feePayer
-            ? `<span class="fee-payer-cell">(${solscanLinkAccount(feePayer, truncate(feePayer, 4, 4))})</span>`
+            ? `<span class="fee-payer-cell">(${feeLabel}${vybeLinkAccount(feePayer, truncate(feePayer, 4, 4))})</span>`
             : '';
           const hasTwoValues = !!(authority && feePayer && authority !== feePayer);
           const authorityFeePayerCellClass = hasTwoValues ? 'authority-fee-payer-double' : 'authority-fee-payer-single';
@@ -876,11 +1364,11 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
             !authority && !feePayer
               ? '—'
               : authority === feePayer
-                ? solscanLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))
+                ? `${authLabel}${vybeLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))}`
                 : authority && feePayer
-                  ? `${solscanLinkAccount(authority, truncate(authority, 4, 4))}<br>${feePayerLink}`
+                  ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}<br>${feePayerLink}`
                   : authority
-                    ? solscanLinkAccount(authority, truncate(authority, 4, 4))
+                    ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}`
                     : feePayer
                       ? feePayerLink
                       : '—';
@@ -954,11 +1442,24 @@ async function onFetch(): Promise<void> {
   clearError();
   clearInlineError(summaryError);
   clearInlineError(tokenError);
+  // Clear tables immediately so the user sees we're refetching.
+  renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
+  perQuoteFiltersContainer.innerHTML = '';
+  // Reset per-quote state for new fetch.
+  lastRemoteTrades = [];
+  lastFilteredTrades = [];
+  lastFilteredTradesForPerQuote = [];
+  excludedQuoteMints.clear();
+  Object.keys(perQuoteRules).forEach((k) => {
+    delete perQuoteRules[k];
+  });
   fetchBtn.disabled = true;
   exportBtn.disabled = true;
   exportAllBtn.disabled = true;
   loadingIndicator.hidden = false;
   loadingIndicator.setAttribute('aria-hidden', 'false');
+  tradesLoading.hidden = false;
+  tradesLoading.setAttribute('aria-hidden', 'false');
 
   try {
     // Reset UI back to empty placeholders before fetching.
@@ -1023,6 +1524,7 @@ async function onFetch(): Promise<void> {
 
     lastRemoteTrades = allTrades;
     lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
+    lastFilteredTradesForPerQuote = applyLocalFiltersWithoutPerQuoteRules(lastRemoteTrades);
     await ensureQuoteSymbols(lastFilteredTrades, mintAddressInput.value.trim());
     await ensureSymbolsForTrades(lastFilteredTrades);
     await ensureProgramLabels(lastFilteredTrades);
@@ -1033,23 +1535,29 @@ async function onFetch(): Promise<void> {
     });
     exportBtn.disabled = lastFilteredTrades.length === 0;
     exportAllBtn.disabled = lastRemoteTrades.length === 0;
+    buildLocalFilterRows();
+    if (labelFromTopHoldersCheckbox?.checked) void fetchHolderLabels(mint, lastRemoteTrades);
   } catch (err) {
     showError(err instanceof Error ? err.message : String(err));
   } finally {
     fetchBtn.disabled = false;
     loadingIndicator.hidden = true;
     loadingIndicator.setAttribute('aria-hidden', 'true');
+    tradesLoading.hidden = true;
+    tradesLoading.setAttribute('aria-hidden', 'true');
   }
 }
 
 function onLocalFilterChange(): void {
   lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
+  lastFilteredTradesForPerQuote = applyLocalFiltersWithoutPerQuoteRules(lastRemoteTrades);
   renderTrades(lastFilteredTrades, {
     remoteCount: lastRemoteTrades.length,
     filteredCount: lastFilteredTrades.length,
     query: '',
   });
   exportBtn.disabled = lastFilteredTrades.length === 0;
+  buildLocalFilterRows();
 }
 
 fetchBtn.addEventListener('click', () => {
@@ -1067,6 +1575,8 @@ exportAllBtn.addEventListener('click', async () => {
   exportAllBtn.disabled = true;
   loadingIndicator.hidden = false;
   loadingIndicator.setAttribute('aria-hidden', 'false');
+  tradesLoading.hidden = false;
+  tradesLoading.setAttribute('aria-hidden', 'false');
 
   try {
     const query = buildTradesQueryForTable();
@@ -1101,6 +1611,8 @@ exportAllBtn.addEventListener('click', async () => {
   } finally {
     loadingIndicator.hidden = true;
     loadingIndicator.setAttribute('aria-hidden', 'true');
+    tradesLoading.hidden = true;
+    tradesLoading.setAttribute('aria-hidden', 'true');
     exportAllBtn.disabled = lastRemoteTrades.length === 0;
   }
 });
@@ -1108,9 +1620,58 @@ exportAllBtn.addEventListener('click', async () => {
 searchInput.addEventListener('input', onLocalFilterChange);
 localMarketInput.addEventListener('input', onLocalFilterChange);
 localProgramInput.addEventListener('input', onLocalFilterChange);
-minPriceInput.addEventListener('input', onLocalFilterChange);
-minBaseSizeInput.addEventListener('input', onLocalFilterChange);
-minQuoteSizeInput.addEventListener('input', onLocalFilterChange);
+if (localSignatureInput) localSignatureInput.addEventListener('input', onLocalFilterChange);
+if (localFeePayerInput) localFeePayerInput.addEventListener('input', onLocalFilterChange);
+if (localAuthorityInput) localAuthorityInput.addEventListener('input', onLocalFilterChange);
+if (filterTypeSelect) filterTypeSelect.addEventListener('change', onLocalFilterChange);
+if (authorityEqualsFeePayerCheckbox) authorityEqualsFeePayerCheckbox.addEventListener('change', onLocalFilterChange);
+if (labelFromTopHoldersCheckbox) {
+  labelFromTopHoldersCheckbox.addEventListener('change', () => {
+    if (labelFromTopHoldersCheckbox.checked) {
+      const mint = mintAddressInput.value.trim();
+      if (mint && lastRemoteTrades.length > 0) void fetchHolderLabels(mint, lastRemoteTrades);
+    } else {
+      renderTrades(lastFilteredTrades, {
+        remoteCount: lastRemoteTrades.length,
+        filteredCount: lastFilteredTrades.length,
+        query: '',
+      });
+    }
+  });
+}
+
+/** Sync switch track aria-pressed from checkbox state */
+function syncSwitchTrack(switchLabel: HTMLElement): void {
+  const input = switchLabel.querySelector('.trades-fetch-switch-input') as HTMLInputElement | null;
+  const options = switchLabel.querySelectorAll('.trades-fetch-switch-option');
+  if (!input || !options.length) return;
+  const isOn = input.checked;
+  options.forEach((opt) => {
+    const val = opt.getAttribute('data-value');
+    opt.setAttribute('aria-pressed', String(val === 'on' ? isOn : !isOn));
+  });
+}
+
+/** Wire up trades-fetch-switch: option clicks update checkbox and sync track */
+function initLocalFilterSwitches(): void {
+  document.querySelectorAll('.trades-fetch-switch').forEach((label) => {
+    const switchLabel = label as HTMLElement;
+    const input = switchLabel.querySelector('.trades-fetch-switch-input') as HTMLInputElement | null;
+    const options = switchLabel.querySelectorAll('.trades-fetch-switch-option');
+    if (!input || !options.length) return;
+    syncSwitchTrack(switchLabel);
+    options.forEach((opt) => {
+      opt.addEventListener('click', (e) => {
+        e.preventDefault();
+        const val = (opt as HTMLElement).getAttribute('data-value');
+        input.checked = val === 'on';
+        syncSwitchTrack(switchLabel);
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  });
+}
+initLocalFilterSwitches();
 
 // Initial empty state
 renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });

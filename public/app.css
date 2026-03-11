@@ -56,6 +56,12 @@ header h1 {
   align-items: flex-end;
 }
 
+.inputs-pair {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -124,6 +130,11 @@ header h1 {
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M10.6 13.4a1 1 0 0 1 0-1.4l2-2a1 1 0 1 1 1.4 1.4l-2 2a1 1 0 0 1-1.4 0ZM8.5 15.5a4 4 0 0 1 0-5.7l1.4-1.4a4 4 0 0 1 5.7 0a1 1 0 1 1-1.4 1.4a2 2 0 0 0-2.9 0L9.9 11.2a2 2 0 0 0 2.9 2.9a1 1 0 1 1 1.4 1.4a4 4 0 0 1-5.7 0ZM15.5 8.5a4 4 0 0 1 0 5.7l-1.4 1.4a4 4 0 0 1-5.7 0a1 1 0 1 1 1.4-1.4a2 2 0 0 0 2.9 0l1.4-1.4a2 2 0 0 0-2.9-2.9a1 1 0 1 1-1.4-1.4a4 4 0 0 1 5.7 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
+.field-icon.icon-market::after {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 4v16h16V4H4zm2 2h12v3l-1 2v9H7v-9l-1-2V6z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 4v16h16V4H4zm2 2h12v3l-1 2v9H7v-9l-1-2V6z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 .field-icon.icon-dollar::after {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M11 2a1 1 0 0 1 2 0v1.1c2.6.3 4.5 1.9 4.8 4.3a1 1 0 1 1-2 .2c-.2-1.7-1.6-2.5-3.8-2.5c-2.2 0-3.5.9-3.5 2.3c0 1.3 1.1 1.9 4 2.5c3.3.8 5.5 2 5.5 5.1c0 2.7-2.1 4.5-5.3 4.9V22a1 1 0 0 1-2 0v-1.1c-2.9-.3-5-2-5.4-4.7a1 1 0 1 1 2-.3c.4 2 2.2 3 4.4 3c2.4 0 3.9-1 3.9-2.6c0-1.6-1.4-2.2-4.5-2.9C8.5 11.6 6.5 10.4 6.5 7.6c0-2.5 1.9-4.2 4.5-4.5V2Z'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M11 2a1 1 0 0 1 2 0v1.1c2.6.3 4.5 1.9 4.8 4.3a1 1 0 1 1-2 .2c-.2-1.7-1.6-2.5-3.8-2.5c-2.2 0-3.5.9-3.5 2.3c0 1.3 1.1 1.9 4 2.5c3.3.8 5.5 2 5.5 5.1c0 2.7-2.1 4.5-5.3 4.9V22a1 1 0 0 1-2 0v-1.1c-2.9-.3-5-2-5.4-4.7a1 1 0 1 1 2-.3c.4 2 2.2 3 4.4 3c2.4 0 3.9-1 3.9-2.6c0-1.6-1.4-2.2-4.5-2.9C8.5 11.6 6.5 10.4 6.5 7.6c0-2.5 1.9-4.2 4.5-4.5V2Z'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -162,6 +173,11 @@ header h1 {
 .field-icon.icon-user::after {
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0-2a2.5 2.5 0 1 1 2.5-2.5A2.5 2.5 0 0 1 12 10Zm0 4c-4.4 0-8 2.2-8 5a1 1 0 0 0 2 0c0-1.4 2.5-3 6-3s6 1.6 6 3a1 1 0 0 0 2 0c0-2.8-3.6-5-8-5Z'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0-2a2.5 2.5 0 1 1 2.5-2.5A2.5 2.5 0 0 1 12 10Zm0 4c-4.4 0-8 2.2-8 5a1 1 0 0 0 2 0c0-1.4 2.5-3 6-3s6 1.6 6 3a1 1 0 0 0 2 0c0-2.8-3.6-5-8-5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.field-icon.icon-info::after {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .field input,
@@ -211,9 +227,11 @@ header h1 {
 
 #search,
 #localMarket,
-#localProgram {
-  min-width: 328px;
-  max-width: 328px;
+#localProgram,
+#localSignature,
+#localAuthority {
+  min-width: 340px;
+  max-width: 340px;
 }
 
 .local-filters-panel .section-header {
@@ -284,7 +302,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 
@@ -395,7 +413,7 @@ button:disabled {
 }
 
 .meta {
-  margin: 0.5rem 0 0.75rem 0;
+  margin: 0 0 0.75rem 0;
   color: #a1a1aa;
   font-size: 0.9rem;
 }
@@ -493,6 +511,7 @@ button:disabled {
   display: block;
 }
 #tradesTable .fee-payer-cell a { color: #facc15; }
+#tradesTable .holder-label { color: #94a3b8; font-size: 8pt; margin-right: 2px; }
 #tradesTable .amount-usdc { color: #86efac; }
 #tradesTable .amount-sol { color: #c4b5fd; }
 #tradesTable .amount-other-value { color: #fef08a; }
@@ -546,8 +565,584 @@ tr:hover td {
 .local-filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.local-filters-subtitle {
+  width: 100%;
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+}
+.local-filters-subtitle + .meta {
+  margin-top: 0.2rem;
+}
+
+#search,
+#localMarket,
+#localProgram,
+#localSignature,
+#localAuthority {
+  min-width: 340px;
+  max-width: 340px;
+}
+
+/* Search | Program contains | Type on one row, aligned. */
+.local-filters-global-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.local-filters-global-row .field:not(.field-switch) {
+  flex: 0 0 340px;
+  min-width: 340px;
+}
+
+.local-filters-global-row .field-search {
+  flex: 0 0 340px;
+  min-width: 340px;
+}
+
+.local-filters-global-row .field-program {
+  flex: 0 0 auto;
+}
+
+.local-filters-global-row .field-program input {
+  width: 100%;
+}
+
+.local-filters-global-row .field-type {
+  flex: 0 0 auto;
+}
+
+/* Same layout as .inputs panel: flex wrap, 3 rows, Search takes half column. */
+.local-filters-global {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: flex-end;
+  width: 100%;
+}
+
+.local-filters-global .field-search {
+  min-width: 280px;
+}
+
+.local-filters-global .field-search input {
+  width: 100%;
+  min-width: 0;
+}
+
+.local-filters-global .field:not(.field-search):not(.field-checkbox) {
+  min-width: 146px;
+}
+
+/* Same input style as top inputs panel. */
+.local-filters-panel .local-filters-global .field-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.local-filters-panel .local-filters-global .field-control .field-icon {
+  display: block;
+  position: absolute;
+  left: 10px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Label icons (in labels next to field text, and in switch headers) */
+.field label .label-icon.field-icon,
+.field-switch-header .label-icon.field-icon {
+  display: inline-block;
+  position: relative;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  background: none;
+  opacity: 1;
+}
+.field label .label-icon.field-icon::after,
+.field-switch-header .label-icon.field-icon::after {
+  inset: 0;
+  position: absolute;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.local-filters-panel .local-filters-global .field input,
+.local-filters-panel .local-filters-global .field select {
+  padding-left: 34px;
+  padding-right: 0.75rem;
+  min-width: 134px;
+}
+
+.local-filters-panel .local-filters-global .field-search input {
+  min-width: 0;
+}
+
+.local-filters-global-row .field-type select {
+  min-width: 120px;
+  max-width: 134px;
+}
+.local-filters-row-type-checkbox {
+  align-items: flex-end;
+  gap: 0;
+}
+.local-filters-row-type-checkbox .field-type {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 134px;
+  margin-right: 0;
+}
+.local-filters-row-type-checkbox .field-type select {
+  min-width: 0;
+  max-width: 134px;
+}
+.local-filters-row-type-checkbox .field-program {
+  margin-left: 20px;
+}
+.local-filters-row-type-checkbox .field-program + .field {
+  margin-left: 13px;
+}
+.local-filters-row-type-checkbox .field-checkbox {
+  width: auto;
+  flex: 1 1 auto;
+  flex-basis: auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.local-filters-row-type-checkbox .field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding-top: 0;
+  padding-bottom: 0;
+  box-sizing: border-box;
+}
+
+/* Switch (trades-fetch-switch style, no lock) */
+.local-filters-panel .field-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.local-filters-panel .field-switch-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: default;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+.local-filters-panel .field-switch-header .field-switch-title {
+  flex: 0 0 auto;
+}
+.local-filters-panel .field-switch-info.icon-info-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+.local-filters-panel .field-switch-info .label-icon.field-icon.icon-info {
+  width: 12px;
+  height: 12px;
+}
+.local-filters-panel .trades-fetch-switch {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: stretch;
+  width: fit-content;
+  height: 35px;
+}
+.local-filters-panel .trades-fetch-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.local-filters-panel .trades-fetch-switch-track {
+  display: inline-flex;
+  align-items: center;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+}
+.local-filters-panel .trades-fetch-switch-option {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.local-filters-panel .trades-fetch-switch-option:hover {
+  color: #e4e4e7;
+}
+.local-filters-panel .trades-fetch-switch-option[aria-pressed="true"] {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Same switch styling in inputs panel (Top 1k holder labels beside Max pages) */
+.inputs.panel .field-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.inputs.panel .field-switch-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: default;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+.inputs.panel .field-switch-header .field-switch-title {
+  flex: 0 0 auto;
+}
+.inputs.panel .field-switch-info.icon-info-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+.inputs.panel .field-switch-info .label-icon.field-icon.icon-info {
+  width: 12px;
+  height: 12px;
+}
+.inputs.panel .trades-fetch-switch {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: stretch;
+  width: fit-content;
+  height: 35px;
+}
+.inputs.panel .trades-fetch-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.inputs.panel .trades-fetch-switch-track {
+  display: inline-flex;
+  align-items: center;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+}
+.inputs.panel .trades-fetch-switch-option {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.inputs.panel .trades-fetch-switch-option:hover {
+  color: #e4e4e7;
+}
+.inputs.panel .trades-fetch-switch-option[aria-pressed="true"] {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.local-filters-row-type-checkbox .field-switch {
+  min-width: 0;
+  justify-content: flex-end;
+  margin-left: 0;
+}
+.local-filters-row-type-checkbox .field-switch-header {
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Checkbox row: full width (when not in type+checkbox row). */
+.local-filters-panel .local-filters-global .field-checkbox {
+  width: 100%;
+  flex-basis: 100%;
+}
+.local-filters-panel .local-filters-global .field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin: 0;
+}
+.local-filters-panel .local-filters-global .field-checkbox input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.local-filters-dynamic {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.local-filters-dynamic table {
+  font-size: 10pt;
+  min-width: 100%;
+}
+
+.local-filters-dynamic th,
+.local-filters-dynamic td {
+  padding: 0.2rem 0.35rem;
+  white-space: nowrap;
+}
+
+.local-filters-dynamic th:first-child,
+.local-filters-dynamic td:first-child {
+  min-width: 66px;
+  max-width: 66px;
+}
+
+.local-filters-dynamic th:nth-child(2),
+.local-filters-dynamic td:nth-child(2) {
+  min-width: 140px;
+  max-width: 140px;
+}
+
+.local-filters-dynamic td .meta {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+.local-filters-dynamic .per-quote-exclude {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.local-filters-dynamic .per-quote-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.local-filters-dynamic tr.per-quote-row-excluded .per-quote-status-text {
+  color: #f97373; /* red-ish for Excluded */
+}
+
+.local-filters-dynamic tr.per-quote-row-excluded {
+  opacity: 0.55;
+}
+
+/* Per-quote inputs: same style as .field input (dark theme, border, padding). */
+.local-filters-dynamic input[type="number"] {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #0f0f12;
+  color: #e4e4e7;
+  min-width: 6rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Per-quote cell: input wrap + currency label. */
+.local-filters-dynamic .per-quote-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.local-filters-dynamic .per-quote-input-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #0f0f12;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 188px;
+}
+
+.local-filters-dynamic .per-quote-input-wrap input[type="number"] {
+  border: none;
+  border-radius: 6px 0 0 6px;
+  min-width: 4rem;
+  flex: 1 1 auto;
+  padding-right: 0.25rem;
+}
+
+.local-filters-dynamic .per-quote-input-wrap.per-quote-wrap-disabled input[type="number"] {
+  cursor: not-allowed;
+}
+
+.local-filters-dynamic .per-quote-input-wrap.per-quote-wrap-disabled {
+  opacity: 0.85;
+}
+
+/* Hide native number spinners; we use custom buttons. */
+.local-filters-dynamic .per-quote-input-wrap input[type="number"]::-webkit-inner-spin-button,
+.local-filters-dynamic .per-quote-input-wrap input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.local-filters-dynamic .per-quote-input-wrap input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.local-filters-dynamic .per-quote-spinners {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid #3f3f46;
+  border-radius: 0 6px 6px 0;
+}
+
+.local-filters-dynamic .per-quote-spin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  min-height: 14px;
+  padding: 0;
+  border: none;
+  background: #27272a;
+  color: #e4e4e7;
+  cursor: pointer;
+  font-size: 0.6rem;
+  line-height: 1;
+  border-radius: 0;
+}
+
+.local-filters-dynamic .per-quote-spin-up {
+  color: #86efac; /* light green */
+}
+
+.local-filters-dynamic .per-quote-spin-down {
+  color: #fca5a5; /* light red */
+}
+
+.local-filters-dynamic .per-quote-spin:first-child {
+  border-radius: 0 6px 0 0;
+}
+
+.local-filters-dynamic .per-quote-spin:last-child {
+  border-radius: 0 0 6px 0;
+}
+
+.local-filters-dynamic .per-quote-spin:hover:not(:disabled) {
+  background: #3f3f46;
+}
+
+.local-filters-dynamic .per-quote-spin:disabled {
+  color: #3f3f46; /* dark grey */
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.local-filters-dynamic .per-quote-spin::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 5px solid currentColor;
+}
+
+.local-filters-dynamic .per-quote-spin-down::before {
+  border-bottom: none;
+  border-top: 5px solid currentColor;
+}
+
+.local-filters-dynamic .per-quote-currency {
+  font-size: 11pt;
+  color: #a1a1aa;
+  flex-shrink: 0;
+  align-self: center;
+  padding-right: 0.35rem;
+  cursor: default;
+}
+
+.local-filters-dynamic .per-quote-input-wrap.per-quote-wrap-disabled .per-quote-currency {
+  cursor: not-allowed;
+  color: #52525b; /* match dimmed input text */
+}
+
+.local-filters-dynamic .per-quote-row-hidden {
+  display: none;
+}
+
+.local-filters-dynamic .per-quote-input-wrap input[type="number"]::placeholder {
+  color: #e4e4e7;
+  opacity: 1;
+}
+
+/* If a field has BOTH arrows disabled, keep placeholder dim. */
+.local-filters-dynamic .per-quote-input-wrap.per-quote-wrap-disabled input[type="number"]::placeholder {
+  color: #52525b;
+}
+
+.local-filters-dynamic .per-quote-show-all-row td {
+  padding: 0.4rem 0.35rem;
+  vertical-align: middle;
+}
+
+.local-filters-dynamic .per-quote-show-all-btn {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  background: transparent;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.local-filters-dynamic .per-quote-show-all-btn:hover {
+  color: #e4e4e7;
+  background: #27272a;
+  border-color: #52525b;
+}
+
+.field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 @media (max-width: 640px) {

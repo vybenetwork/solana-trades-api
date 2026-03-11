@@ -1,6 +1,8 @@
 # Solana Historical Trade Data API
 
-This repository demonstrates how to use the Vybe historical trade data API for Solana to fetch, explore, and analyze on‑chain trades for any SPL token. It includes a production‑style web UI that lets you filter and segment trade history by program, market, wallet, and quote mint; apply local per‑quote rules (min/max price and size, spam filters, exclusions); and export clean, ready‑to‑analyze CSVs for backtesting, analytics dashboards, monitoring tools, and custom trading systems.
+This repository demonstrates how to use the Vybe Solana historical trade data API to fetch, filter, and analyze on-chain trade history for any SPL token. It includes a production-ready Node.js backend and a modern frontend that show how to integrate Vybe’s /v4/trades and related endpoints to explore programs, markets, quote mints, wallets, and per-quote spam filters, with CSV export for downstream analysis.
+
+Use this project as a reference implementation or starter kit for building Solana trade explorers, execution and flow analytics dashboards, and on-chain data products powered by Vybe’s high-performance Solana historical trade data API.
 
 ![Solana Trade History API Historical Trade Data API](screenshots/solana-trade-history-api-historical-trade-data-api.png)
 
@@ -12,7 +14,7 @@ This repository demonstrates how to use the Vybe historical trade data API for S
 ---
 
 **[Get your free Vybe API key →](https://vybenetwork.com/pricing?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**  
-**[Vybe historical trades docs →](https://docs.vybenetwork.com/reference/get_trade_data_program_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**
+**[Vybe historical trades docs →](https://docs.vybenetwork.com/docs/fetch-historical-trades?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**
 
 ---
 
@@ -75,6 +77,19 @@ Get your API key at `https://vybenetwork.com/pricing`.
   - Export **all pages** (up to a configurable `maxPages`) with built-in retry/backoff.
 
 All of this uses Vybe’s production trade history data across Pump.fun, Raydium, Orca, and other Solana DEXes.
+
+---
+
+### Solana API docs for these endpoints
+
+- **Token details (`GET /v4/tokens/{mintAddress}`)**:
+  - [https://docs.vybenetwork.com/reference/get_token_details_v4](https://docs.vybenetwork.com/reference/get_token_details_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+- **Top holders (`GET /v4/tokens/{mintAddress}/top-holders`)**:
+  - [https://docs.vybenetwork.com/reference/get_top_holders_v4](https://docs.vybenetwork.com/reference/get_top_holders_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+- **Historical Trades (**`GET /v4/trades`**)**:
+  - [https://docs.vybenetwork.com/reference/get_trade_data_program_v4](https://docs.vybenetwork.com/reference/get_trade_data_program_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+- **Labeled programs (`GET /v4/programs/labeled-program-accounts`)**:
+  - [https://docs.vybenetwork.com/reference/get_known_program_accounts_v4](https://docs.vybenetwork.com/reference/get_known_program_accounts_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
 
 ---
 

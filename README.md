@@ -7,7 +7,7 @@ This repository demonstrates how to use the Vybe **historical trade data API** t
 ![Token metadata and stats](screenshots/solana-trade-history-api-historical-trade-data-api.png)
 
 <p align="center">
-  <img src="screenshots/top-traders-solana-api.png" alt="Top traders by realized PnL (30d)" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
+  <img src="screenshots/solana-historical-trade-data-api-endpoint.png" alt="Solana Historical Trade Data API Endpoint" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
   <img src="screenshots/top-markets-token-solana-api.png" alt="Top markets (from last 1000 trades)" width="224" style="min-width:224px;max-width:224px;margin-right:10px;" />
   <img src="screenshots/top-token-holders-solana-api.png" alt="Top token holders" width="260" style="min-width:260px;max-width:260px;" />
 </p>

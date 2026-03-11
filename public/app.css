@@ -11,6 +11,27 @@ body {
   min-height: 100vh;
 }
 
+/* Scrollbar: black track, grey thumb */
+html {
+  scrollbar-color: #71717a #000000; /* thumb, track */
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #000000;
+  border-radius: 999px;
+  margin: 4px 0; /* let rounded ends show */
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #71717a;
+  border-radius: 999px;
+}
+
 a {
   color: #3b82f6;
   text-decoration: none;
@@ -520,7 +541,7 @@ button:disabled {
 #tradesTable .txid-icon { font-size: 1rem; text-decoration: none; }
 
 table {
-  width: 100%;
+  width: 99%;
   border-collapse: collapse;
   font-size: 9pt;
 }

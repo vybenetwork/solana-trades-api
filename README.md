@@ -129,7 +129,7 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
       - Trade count.
     - **Top quote mints**: counts by `quoteMintAddress` (using symbol lookup and fallbacks).
 
-![Solana Trade Fetch Filter Local API](screenshots/solana-token-details-api-fetch-metadata.png)
+![Solana Trades Data Table API Fetch](screenshots/solana-trades-data-table-api-fetch.png)
 
 - **Trades table**
   - One row per trade from `/api/trades`:
@@ -137,6 +137,9 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
     - Program, market, base/quote mints, authority, fee payer, signature.
     - Links to Solscan for account and transaction inspection.
   - Supports pagination via `limit`, `pageFrom`, `pageTo`, and `maxPages` controls.
+
+![Solana Trade API Fetch Filter Quotes API](screenshots/solana-trade-api-fetch-filter-quotes.png)
+
 - **Per-quote mints table (local rules)**
   - Built entirely on the client from the **currently loaded, locally filtered trades**.
   - One row per quote mint with:

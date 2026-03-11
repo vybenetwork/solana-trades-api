@@ -4,10 +4,12 @@ This repository demonstrates how to use the Vybe **historical trade data API** t
 
 > You will update the actual screenshot images yourself; this README only describes the UI and features.
 
+![Token metadata and stats](screenshots/token-metadata-spl-token2022-solana-api.png)
+
 <p align="center">
-  <img src="screenshots/token-metadata-spl-token2022-solana-api.png" alt="Token metadata and stats" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
-  <img src="screenshots/top-markets-token-solana-api.png" alt="Top markets / trades summary" width="224" style="min-width:224px;max-width:224px;margin-right:10px;" />
-  <img src="screenshots/top-traders-solana-api.png" alt="Historical trades table & flows" width="260" style="min-width:260px;max-width:260px;" />
+  <img src="screenshots/top-traders-solana-api.png" alt="Top traders by realized PnL (30d)" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
+  <img src="screenshots/top-markets-token-solana-api.png" alt="Top markets (from last 1000 trades)" width="224" style="min-width:224px;max-width:224px;margin-right:10px;" />
+  <img src="screenshots/top-token-holders-solana-api.png" alt="Top token holders" width="260" style="min-width:260px;max-width:260px;" />
 </p>
 
 ---

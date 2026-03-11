@@ -2,13 +2,11 @@
 
 This repository demonstrates how to use the Vybe **historical trade data API** to fetch and explore trades for any SPL token, with an in-browser UI for filtering, summarizing, and exporting transactions to CSV.
 
-> You will update the actual screenshot images yourself; this README only describes the UI and features.
-
 ![Token metadata and stats](screenshots/solana-trade-history-api-historical-trade-data-api.png)
 
 <p align="center">
   <img src="screenshots/solana-historical-trade-data-api-endpoint.png" alt="Solana Historical Trade Data API Endpoint" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
-  <img src="screenshots/top-markets-token-solana-api.png" alt="Top markets (from last 1000 trades)" width="224" style="min-width:224px;max-width:224px;margin-right:10px;" />
+  <img src="screenshots/pumpfun-raydium-historical-data-api-endpoint-provider-on-solana.png" alt="Pump.fun Raydium Historical Data API Endpoint Provider on Solana" width="224" style="min-width:224px;max-width:224px;margin-right:10px;" />
   <img src="screenshots/top-token-holders-solana-api.png" alt="Top token holders" width="260" style="min-width:260px;max-width:260px;" />
 </p>
 

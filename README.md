@@ -1,12 +1,12 @@
 # Solana Historical Trade Data API
 
-This repository demonstrates how to use the Vybe **historical trade data API** to fetch and explore trades for any SPL token, with an in-browser UI for filtering, summarizing, and exporting transactions to CSV.
+This repository demonstrates how to use the Vybe historical trade data API for Solana to fetch, explore, and analyze on‑chain trades for any SPL token. It includes a production‑style web UI that lets you filter and segment trade history by program, market, wallet, and quote mint; apply local per‑quote rules (min/max price and size, spam filters, exclusions); and export clean, ready‑to‑analyze CSVs for backtesting, analytics dashboards, monitoring tools, and custom trading systems.
 
 ![Solana Trade History API Historical Trade Data API](screenshots/solana-trade-history-api-historical-trade-data-api.png)
 
 <p align="center">
-  <img src="screenshots/solana-historical-trade-data-api-endpoint.png" alt="Solana Historical Trade Data API Endpoint" width="260" style="min-width:260px;max-width:260px;margin-right:10px;" />
-  <img src="screenshots/pumpfun-raydium-historical-data-api-endpoint-provider-on-solana.png" alt="Pump.fun Raydium Historical Data API Endpoint Provider on Solana" width="260" style="min-width:260px;max-width:260px;" />
+  <img src="screenshots/solana-historical-trade-data-api-endpoint.png" alt="Solana Historical Trade Data API Endpoint" width="320" style="min-width:320px;max-width:320px;margin-right:10px;" />
+  <img src="screenshots/pumpfun-raydium-historical-data-api-endpoint-provider-on-solana.png" alt="Pump.fun Raydium Historical Data API Endpoint Provider on Solana" width="320" style="min-width:320px;max-width:320px;" />
 </p>
 
 ---

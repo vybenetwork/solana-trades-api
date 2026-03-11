@@ -157,6 +157,8 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
 
 ### Remote filters (Vybe query params)
 
+![Solana Trade Fetch Filter Local API](screenshots/solana-trade-fetch-filter-local.png)
+
 The top of the UI controls the request sent to `/api/trades`:
 
 - **Core fields**
@@ -177,6 +179,8 @@ These map directly to `GetTradesParams` in `src/api/trades.ts` and are proxied t
 
 ### Local filters (no refetch)
 
+![Solana Trade Fetch Filter Local API](screenshots/solana-trade-fetch-filter-local.png)
+
 After trades are loaded, local filters apply **in-browser only**:
 
 - **Search**: free-text search across multiple fields.
@@ -191,6 +195,8 @@ Local filters update:
 - The `(filtered/total)` counts per quote mint.
 
 ### Per-quote rules and exclusions
+
+![Solana Trade API Fetch Filter Quotes API](screenshots/solana-trade-api-fetch-filter-quotes.png)
 
 Per-quote rules are stored in `perQuoteRules` and `excludedQuoteMints` in `src/frontend/app.ts`:
 

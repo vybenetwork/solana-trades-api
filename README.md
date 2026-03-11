@@ -115,6 +115,9 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
 - **Token metadata header**
   - Shows symbol, name, mint, decimals, price, market cap, 24h volume, and holders where available.
   - Falls back to Metaplex/`/api/token-symbol/:mint` when token details fail.
+
+![Solana Token Details API Fetch Metadata](screenshots/solana-token-details-api-fetch-metadata.png)
+
 - **Trades summary**
   - Built from the latest fetched trades (no extra Vybe calls):
     - **Top programs**: counts trades by `programAddress` and decorates them with labels from:
@@ -125,6 +128,9 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
       - Pair (base / most common quote mint in that market).
       - Trade count.
     - **Top quote mints**: counts by `quoteMintAddress` (using symbol lookup and fallbacks).
+
+![Solana Trade Fetch Filter Local API](screenshots/solana-token-details-api-fetch-metadata.png)
+
 - **Trades table**
   - One row per trade from `/api/trades`:
     - Timestamp (from `blockTime`), price, base size, quote size.
@@ -157,7 +163,7 @@ The historical trades UI is implemented in `src/frontend/app.ts` and compiled to
 
 ### Remote filters (Vybe query params)
 
-![Solana Trade Fetch Filter Local API](screenshots/solana-trade-fetch-filter-local.png)
+![Solana Trade Fetch Filter Local API](screenshots/solana-fetch-trades-api-remote-filters-token.png)
 
 The top of the UI controls the request sent to `/api/trades`:
 

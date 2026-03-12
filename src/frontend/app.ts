@@ -83,6 +83,12 @@ const perQuoteFiltersContainer = document.getElementById('perQuoteFiltersContain
 
 const tradesError = document.getElementById('tradesError') as HTMLElement;
 const tradesMeta = document.getElementById('tradesMeta') as HTMLElement;
+const tradesSummaryEl = document.getElementById('tradesSummary') as HTMLElement | null;
+const tradesSummaryCountEl = document.getElementById('tradesSummaryCount') as HTMLElement | null;
+const tradesSummaryProgramsEl = document.getElementById('tradesSummaryPrograms') as HTMLElement | null;
+const tradesSummaryMarketsEl = document.getElementById('tradesSummaryMarkets') as HTMLElement | null;
+const tradesSummaryQuotesEl = document.getElementById('tradesSummaryQuotes') as HTMLElement | null;
+const tradesSummaryTimeEl = document.getElementById('tradesSummaryTime') as HTMLElement | null;
 const tradesBody = document.getElementById('tradesBody') as HTMLElement;
 
 const tokenLoading = document.getElementById('tokenLoading') as HTMLElement;
@@ -1270,8 +1276,57 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
     : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
 }
 
+function updateTradesSummary(trades: VybeTrade[], meta: { remoteCount: number; filteredCount: number }): void {
+  if (!tradesSummaryEl) return;
+  if (tradesSummaryCountEl) {
+    const remote = meta.remoteCount ?? trades.length;
+    const filtered = meta.filteredCount ?? trades.length;
+    tradesSummaryCountEl.textContent = `${filtered.toLocaleString()} / ${remote.toLocaleString()}`;
+  }
+  if (trades.length === 0) {
+    if (tradesSummaryProgramsEl) tradesSummaryProgramsEl.textContent = '0';
+    if (tradesSummaryMarketsEl) tradesSummaryMarketsEl.textContent = '0';
+    if (tradesSummaryQuotesEl) tradesSummaryQuotesEl.textContent = '0';
+    if (tradesSummaryTimeEl) tradesSummaryTimeEl.textContent = '—';
+    return;
+  }
+
+  const programs = new Set<string>();
+  const markets = new Set<string>();
+  const quotes = new Set<string>();
+  let minTime: number | undefined;
+  let maxTime: number | undefined;
+  for (const t of trades) {
+    const p = (t.programAddress ?? '').trim();
+    const m = (t.marketAddress ?? '').trim();
+    const q = (t.quoteMintAddress ?? '').trim();
+    if (p) programs.add(p);
+    if (m) markets.add(m);
+    if (q) quotes.add(q);
+    const bt = t.blockTime;
+    if (typeof bt === 'number' && Number.isFinite(bt)) {
+      minTime = minTime == null ? bt : Math.min(minTime, bt);
+      maxTime = maxTime == null ? bt : Math.max(maxTime, bt);
+    }
+  }
+
+  if (tradesSummaryProgramsEl) tradesSummaryProgramsEl.textContent = programs.size.toLocaleString();
+  if (tradesSummaryMarketsEl) tradesSummaryMarketsEl.textContent = markets.size.toLocaleString();
+  if (tradesSummaryQuotesEl) tradesSummaryQuotesEl.textContent = quotes.size.toLocaleString();
+  if (tradesSummaryTimeEl) {
+    if (minTime != null && maxTime != null && minTime !== maxTime) {
+      tradesSummaryTimeEl.textContent = `${formatTime(minTime)} → ${formatTime(maxTime)}`;
+    } else if (minTime != null) {
+      tradesSummaryTimeEl.textContent = formatTime(minTime);
+    } else {
+      tradesSummaryTimeEl.textContent = '—';
+    }
+  }
+}
+
 function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filteredCount: number; query: string }): void {
-  tradesMeta.textContent = `Remote: ${meta.remoteCount} trade(s). Showing: ${meta.filteredCount} after local filters.`;
+  tradesMeta.textContent = '';
+  updateTradesSummary(trades, meta);
 
   tradesBody.innerHTML = trades.length
     ? trades

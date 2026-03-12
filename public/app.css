@@ -258,6 +258,22 @@ header h1 {
 .local-filters-panel .section-header {
   margin-bottom: 10px;
 }
+.remote-filters-help {
+  margin: 0.5rem 0 0.5rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  flex-basis: 100%;
+}
+
+.local-filters-help {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+
+.local-filters-help strong {
+  font-weight: 600;
+}
 
 .actions {
   display: flex;
@@ -322,7 +338,6 @@ button:disabled {
 .section-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
@@ -539,6 +554,40 @@ button:disabled {
 #tradesTable .amount-other-symbol { color: #facc15; }
 #tradesTable .market-other-yellow { color: #facc15; }
 #tradesTable .txid-icon { font-size: 1rem; text-decoration: none; }
+
+.trades-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 0.7fr) 1.4fr;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.trades-summary-item {
+  background: #0f0f12;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.trades-summary-label {
+  color: #a1a1aa;
+  font-size: 0.75rem;
+}
+
+.trades-summary-item span:last-child {
+  font-weight: 600;
+  color: #e4e4e7;
+}
+
+@media (max-width: 900px) {
+  .trades-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 table {
   width: 99%;

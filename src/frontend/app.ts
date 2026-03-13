@@ -163,6 +163,11 @@ const WELL_KNOWN_PROGRAMS: Record<string, string> = {
   'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 'Jupiter',
 };
 
+let fetchClickedOnce = false;
+
+// Draw attention to Fetch trades until first click.
+fetchBtn.classList.add('fetch-btn-attention');
+
 interface ProgramItem {
   programAddress?: string;
   name?: string;
@@ -1616,6 +1621,10 @@ function onLocalFilterChange(): void {
 }
 
 fetchBtn.addEventListener('click', () => {
+  if (!fetchClickedOnce) {
+    fetchClickedOnce = true;
+    fetchBtn.classList.remove('fetch-btn-attention');
+  }
   void onFetch();
 });
 

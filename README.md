@@ -13,8 +13,8 @@ Use this project as a reference implementation or starter kit for building Solan
 
 ---
 
-**[Get your free Vybe API key →](https://vybenetwork.com/pricing?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**  
-**[Vybe historical trades docs →](https://docs.vybenetwork.com/docs/fetch-historical-trades?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)**
+**[Get your free Vybe API key →](https://vybenetwork.com/pricing)**  
+**[Vybe historical trades docs →](https://docs.vybenetwork.com/docs/fetch-historical-trades)**
 
 ---
 
@@ -83,13 +83,13 @@ All of this uses Vybe’s production trade history data across Pump.fun, Raydium
 ### Solana API docs for these endpoints
 
 - **Token details (`GET /v4/tokens/{mintAddress}`)**:
-  - [https://docs.vybenetwork.com/reference/get_token_details_v4](https://docs.vybenetwork.com/reference/get_token_details_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+  - [https://docs.vybenetwork.com/reference/get_token_details_v4](https://docs.vybenetwork.com/reference/get_token_details_v4)
 - **Top holders (`GET /v4/tokens/{mintAddress}/top-holders`)**:
-  - [https://docs.vybenetwork.com/reference/get_top_holders_v4](https://docs.vybenetwork.com/reference/get_top_holders_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+  - [https://docs.vybenetwork.com/reference/get_top_holders_v4](https://docs.vybenetwork.com/reference/get_top_holders_v4)
 - **Historical Trades (**`GET /v4/trades`**)**:
-  - [https://docs.vybenetwork.com/reference/get_trade_data_program_v4](https://docs.vybenetwork.com/reference/get_trade_data_program_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+  - [https://docs.vybenetwork.com/reference/get_trade_data_program_v4](https://docs.vybenetwork.com/reference/get_trade_data_program_v4)
 - **Labeled programs (`GET /v4/programs/labeled-program-accounts`)**:
-  - [https://docs.vybenetwork.com/reference/get_known_program_accounts_v4](https://docs.vybenetwork.com/reference/get_known_program_accounts_v4?utm_source=github&utm_medium=repo&utm_campaign=solana-historical-trade-data-api)
+  - [https://docs.vybenetwork.com/reference/get_known_program_accounts_v4](https://docs.vybenetwork.com/reference/get_known_program_accounts_v4)
 
 ---
 

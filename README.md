@@ -17,7 +17,7 @@ Use this project as a reference implementation or starter kit for building Solan
 
 **[Try the LIVE demo →](https://solana-historical-trade-data-api.vybenetwork.com)**  
 
-**[Get your free Vybe API key →](https://vybenetwork.com/pricing)**  
+**[Get your free Vybe API key →](https://vybe.fyi/api-pricing)**  
 
 **[Vybe historical trades docs →](https://docs.vybenetwork.com/docs/fetch-historical-trades)**
 
@@ -52,7 +52,7 @@ Then open **http://localhost:3000**, enter a token mint, and click **Fetch trade
 | `PORT`            | No       | HTTP server port                                                            | `3000`                                    |
 | `TUNNEL`          | No       | Set to `1` to run behind a Cloudflare Tunnel                               | `1`                                       |
 
-Get your API key at `https://vybenetwork.com/pricing`.
+Get your API key at `https://vybe.fyi/api-pricing`.
 
 ---
 

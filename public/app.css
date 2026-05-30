@@ -1007,7 +1007,7 @@ tr:hover td {
 }
 
 .local-filters-global .field:not(.field-search):not(.field-checkbox) {
-  min-width: 146px;
+  min-width: 134px;
 }
 
 /* Same input style as top inputs panel. */
@@ -1053,7 +1053,7 @@ tr:hover td {
 .local-filters-panel .local-filters-global .field select {
   padding-left: 34px;
   padding-right: 0.75rem;
-  min-width: 134px;
+  min-width: 120px;
 }
 
 .local-filters-panel .local-filters-global .field-search input {
@@ -1160,6 +1160,7 @@ tr:hover td {
   border-radius: 8px;
   padding: 4px;
   gap: 2px;
+  min-width: 198px;
 }
 .local-filters-panel .trades-fetch-switch-option {
   padding: 0.35rem 0.75rem;

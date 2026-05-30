@@ -160,7 +160,7 @@ a:hover {
 
 .page-masthead__nav-row--primary {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto auto 1fr;
   gap: 1rem 1.5rem;
   align-items: start;
   width: 100%;
@@ -168,18 +168,14 @@ a:hover {
 
 .page-masthead__nav-cluster {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   gap: 1rem 1.5rem;
   min-width: 0;
 }
 
-.page-masthead__nav-row--endpoints {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-  padding-top: 0.15rem;
+.page-masthead__group--endpoints .page-masthead__btns {
+  flex-wrap: nowrap;
 }
 
 .page-masthead__group {

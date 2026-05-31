@@ -428,7 +428,7 @@ function renderProgramDexChip(addr: string | undefined, colorMap: Map<string, st
   if (!display || display === '—') return '—';
   const color = colorMap.get(programGroupKey(programFullLabel(a))) ?? '#a1a1aa';
   const href = `${SOLSCAN_ACCOUNT}${encodeURIComponent(a)}`;
-  return `<a href="${href}" target="_blank" rel="noopener" class="program-dex-chip-link" title="${escapeHtml(a)}"><span class="program-dex-chip" style="color:${color}">${escapeHtml(display)}</span></a>`;
+  return `<a href="${href}" target="_blank" class="program-dex-chip-link" title="${escapeHtml(a)}"><span class="program-dex-chip" style="color:${color}">${escapeHtml(display)}</span></a>`;
 }
 
 function isStableQuoteSymbol(sym: string): boolean {
@@ -439,7 +439,7 @@ function vybeLinkAccount(addr: string | undefined, text?: string): string {
   if (!addr) return '—';
   const href = VYBE_ACCOUNT + encodeURIComponent(addr);
   const label = text ?? truncate(addr, 3, 3);
-  return `<a href="${href}" target="_blank" rel="noopener" title="${addr}">${label}</a>`;
+  return `<a href="${href}" target="_blank" title="${addr}">${label}</a>`;
 }
 
 /** Solscan link for accounts (markets, programs, mints). Use vybeLinkAccount for wallets only. */
@@ -447,7 +447,7 @@ function solscanLinkAccount(addr: string | undefined, text?: string): string {
   if (!addr) return '—';
   const href = SOLSCAN_ACCOUNT + encodeURIComponent(addr);
   const label = text ?? truncate(addr, 3, 3);
-  return `<a href="${href}" target="_blank" rel="noopener" title="${addr}">${label}</a>`;
+  return `<a href="${href}" target="_blank" title="${addr}">${label}</a>`;
 }
 
 function formatTimeParts(blockTime: number | undefined): { time: string; date: string } | null {
@@ -1516,7 +1516,7 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
               : '';
           const marketPoolChip = renderMarketPoolChip(otherSymbol, marketOtherClass);
           const market = t.marketAddress
-            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" rel="noopener" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)}${marketPoolChip ? ` ${marketPoolChip}` : ''}</a>`
+            ? `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(t.marketAddress)}" target="_blank" title="${t.marketAddress}">${truncate(t.marketAddress, 4, 4)}${marketPoolChip ? ` ${marketPoolChip}` : ''}</a>`
             : '—';
           const program = renderProgramDexChip(t.programAddress, programColorMap);
           const authority = (t.authorityAddress ?? '').trim();
@@ -1542,7 +1542,7 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
                       ? feePayerLink
                       : '—';
           const txid = t.signature
-            ? `<a href="${SOLSCAN_TX}${encodeURIComponent(t.signature)}" target="_blank" rel="noopener" title="${t.signature}" class="txid-icon" aria-label="View transaction">↗</a>`
+            ? `<a href="${SOLSCAN_TX}${encodeURIComponent(t.signature)}" target="_blank" title="${t.signature}" class="txid-icon" aria-label="View transaction">↗</a>`
             : '—';
 
           return `<tr>

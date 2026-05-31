@@ -103,6 +103,30 @@ function buildTradesPlaceholderRowsHtml(): string {
   return Array.from({ length: TRADES_PLACEHOLDER_ROW_COUNT }, () => TRADES_PLACEHOLDER_ROW_HTML).join('');
 }
 
+/** Empty summary mini-tables (stable layout before fetch). */
+const TOP_SUMMARY_PLACEHOLDER_ROW_COUNT = 5;
+
+const TOP_PROGRAMS_PLACEHOLDER_ROW_HTML =
+  '<tr class="summary-placeholder-row"><td>—</td><td style="text-align:right">—</td></tr>';
+
+const TOP_MARKETS_PLACEHOLDER_ROW_HTML =
+  '<tr class="summary-placeholder-row"><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
+
+const TOP_QUOTES_PLACEHOLDER_ROW_HTML =
+  '<tr class="summary-placeholder-row"><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
+
+function buildTopProgramsPlaceholderRowsHtml(): string {
+  return Array.from({ length: TOP_SUMMARY_PLACEHOLDER_ROW_COUNT }, () => TOP_PROGRAMS_PLACEHOLDER_ROW_HTML).join('');
+}
+
+function buildTopMarketsPlaceholderRowsHtml(): string {
+  return Array.from({ length: TOP_SUMMARY_PLACEHOLDER_ROW_COUNT }, () => TOP_MARKETS_PLACEHOLDER_ROW_HTML).join('');
+}
+
+function buildTopQuotesPlaceholderRowsHtml(): string {
+  return Array.from({ length: TOP_SUMMARY_PLACEHOLDER_ROW_COUNT }, () => TOP_QUOTES_PLACEHOLDER_ROW_HTML).join('');
+}
+
 const tokenLoading = document.getElementById('tokenLoading') as HTMLElement;
 const tokenError = document.getElementById('tokenError') as HTMLElement;
 
@@ -340,8 +364,12 @@ function wrapAmountClass(html: string, sym: string, isAnalysedMint = false): str
 /** Outlined BUY/SELL chip (same style as wallet PnL assets gain column). */
 function renderTradeTypeChip(type: string): string {
   const norm = type.trim().toLowerCase();
-  if (norm === 'buy') return '<span class="trade-type-chip trade-type-chip--buy">BUY</span>';
-  if (norm === 'sell') return '<span class="trade-type-chip trade-type-chip--sell">SELL</span>';
+  if (norm === 'buy') {
+    return '<span class="trade-type-chip trade-type-chip--buy"><span class="trade-type-side-icon trade-type-side-icon--buy" aria-hidden="true">▲</span>BUY</span>';
+  }
+  if (norm === 'sell') {
+    return '<span class="trade-type-chip trade-type-chip--sell"><span class="trade-type-side-icon trade-type-side-icon--sell" aria-hidden="true">▼</span>SELL</span>';
+  }
   return type === '—' || !type ? '—' : escapeHtml(type);
 }
 
@@ -1027,10 +1055,9 @@ function renderTokenEmpty(): void {
 
 function renderSummaryEmpty(): void {
   summaryMeta.textContent = '—';
-  topProgramsBody.innerHTML = '<tr><td>—</td><td style="text-align:right">—</td></tr>';
-  topMarketsBody.innerHTML = '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
-  topQuotesBody.innerHTML =
-    '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
+  topProgramsBody.innerHTML = buildTopProgramsPlaceholderRowsHtml();
+  topMarketsBody.innerHTML = buildTopMarketsPlaceholderRowsHtml();
+  topQuotesBody.innerHTML = buildTopQuotesPlaceholderRowsHtml();
 }
 
 function topCounts(items: Array<string | undefined>, n: number): Array<{ key: string; count: number }> {
@@ -1295,7 +1322,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
           return `<tr><td>${link}${labelSuffix}</td><td style="text-align:right">${p.count}</td></tr>`;
         })
         .join('')
-    : '<tr><td>—</td><td style="text-align:right">—</td></tr>';
+    : buildTopProgramsPlaceholderRowsHtml();
 
   const topMarketsWithPair = topMarketsRaw
     .map(({ marketAddress, count, bestQuoteMint }) => {
@@ -1313,7 +1340,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
           return `<tr><td>${marketLink}</td><td>${pairDisplay}</td><td style="text-align:right">${count}</td></tr>`;
         })
         .join('')
-    : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
+    : buildTopMarketsPlaceholderRowsHtml();
 
   const quotes = quotesRaw.filter((q) => {
     const s = pairQuoteSymbols[q.key] ?? HARDCODED_QUOTE_MINTS[q.key];
@@ -1332,7 +1359,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
           </tr>`;
         })
         .join('')
-    : '<tr><td>—</td><td>—</td><td style="text-align:right">—</td></tr>';
+    : buildTopQuotesPlaceholderRowsHtml();
 }
 
 function updateTradesSummary(trades: VybeTrade[], meta: { remoteCount: number; filteredCount: number }): void {
@@ -1479,7 +1506,7 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
               : authority === feePayer
                 ? `${authLabel}${vybeLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))}`
                 : authority && feePayer
-                  ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}<br>${feePayerLink}`
+                  ? `<span class="authority-main-value">${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}</span><br>${feePayerLink}`
                   : authority
                     ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}`
                     : feePayer

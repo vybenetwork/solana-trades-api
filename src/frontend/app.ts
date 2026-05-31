@@ -94,7 +94,7 @@ const tradesBody = document.getElementById('tradesBody') as HTMLElement;
 const tradesTable = document.getElementById('tradesTable') as HTMLTableElement | null;
 
 /** Empty trades table skeleton (stable layout before fetch). */
-const TRADES_PLACEHOLDER_ROW_COUNT = 12;
+const TRADES_PLACEHOLDER_ROW_COUNT = 20;
 
 const TRADES_PLACEHOLDER_ROW_HTML =
   '<tr class="trades-placeholder-row"><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="authority-fee-payer-single">—</td><td>—</td></tr>';
@@ -459,7 +459,7 @@ function formatTimeParts(blockTime: number | undefined): { time: string; date: s
     second: '2-digit',
     hour12: true,
   });
-  const weekday = d.toLocaleString('en-US', { weekday: 'long' });
+  const weekday = d.toLocaleString('en-US', { weekday: 'short' }).replace(/\.$/, '');
   const month = d.toLocaleString('en-US', { month: 'short' });
   const day = d.getDate();
   const year = d.getFullYear();
@@ -718,6 +718,29 @@ const TOP_QUOTE_MINTS_FOR_FILTER = 10;
 
 /** Observed min/max from last fetch, used to lock per-quote inputs. */
 let quoteBounds: Record<string, { minQuoteSize: number; maxQuoteSize: number; minPrice: number; maxPrice: number }> = {};
+
+const PER_QUOTE_PLACEHOLDER_ROW_COUNT = 3;
+
+function perQuotePlaceholderInputCell(currency: string): string {
+  return `<div class="per-quote-cell"><div class="per-quote-input-wrap per-quote-wrap-disabled"><input type="number" step="any" disabled placeholder="—" value="" /><span class="per-quote-currency">${currency}</span><div class="per-quote-spinners"><button type="button" class="per-quote-spin per-quote-spin-up" disabled aria-label="Increase"></button><button type="button" class="per-quote-spin per-quote-spin-down" disabled aria-label="Decrease"></button></div></div></div>`;
+}
+
+/** Skeleton per-quote table before trades are loaded. */
+function buildPerQuotePlaceholderTable(): void {
+  if (!perQuoteFiltersContainer) return;
+  const rows = Array.from({ length: PER_QUOTE_PLACEHOLDER_ROW_COUNT }, () => {
+    const dashCell = perQuotePlaceholderInputCell('—');
+    return `<tr class="per-quote-placeholder-row">
+      <td><div>—</div><div class="meta">(—/—)</div></td>
+      <td style="text-align:center"><label class="per-quote-status"><input type="checkbox" class="per-quote-exclude" disabled tabindex="-1" aria-hidden="true" /><span class="per-quote-status-text">—</span></label></td>
+      <td>${dashCell}</td>
+      <td>${dashCell}</td>
+      <td>${dashCell}</td>
+      <td>${dashCell}</td>
+    </tr>`;
+  }).join('');
+  perQuoteFiltersContainer.innerHTML = `<table class="per-quote-table per-quote-table--placeholder"><thead><tr><th>Quote</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody>${rows}<tr class="per-quote-show-all-row"><td colspan="6" style="text-align:center"><button type="button" class="per-quote-show-all-btn" disabled>Show all (— total)</button></td></tr></tbody></table>`;
+}
 
 /**
  * Build dynamic per-quote filter rows from lastFilteredTradesForPerQuote.
@@ -1046,6 +1069,8 @@ function buildLocalFilterRows(): void {
       tbody.appendChild(buttonRow);
     }
     perQuoteFiltersContainer.appendChild(table);
+  } else {
+    buildPerQuotePlaceholderTable();
   }
 }
 
@@ -1584,7 +1609,7 @@ async function onFetch(): Promise<void> {
   clearInlineError(tokenError);
   // Clear tables immediately so the user sees we're refetching.
   renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
-  perQuoteFiltersContainer.innerHTML = '';
+  buildPerQuotePlaceholderTable();
   // Reset per-quote state for new fetch.
   lastRemoteTrades = [];
   lastFilteredTrades = [];
@@ -1821,5 +1846,6 @@ initLocalFilterSwitches();
 renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
 renderTokenEmpty();
 renderSummaryEmpty();
+buildPerQuotePlaceholderTable();
 clearError();
 

@@ -130,6 +130,7 @@ function buildTopQuotesPlaceholderRowsHtml(): string {
 const tokenLoading = document.getElementById('tokenLoading') as HTMLElement;
 const tokenError = document.getElementById('tokenError') as HTMLElement;
 
+const localFiltersLoading = document.getElementById('localFiltersLoading') as HTMLElement;
 const summaryLoading = document.getElementById('summaryLoading') as HTMLElement;
 const summaryError = document.getElementById('summaryError') as HTMLElement;
 const summaryTitle = document.getElementById('summaryTitle') as HTMLElement;
@@ -1425,6 +1426,36 @@ async function ensureQuoteSymbols(trades: VybeTrade[], baseMint: string): Promis
   }
 }
 
+/** Batch-fetch symbols for every quote mint in the per-quote filter table. */
+async function ensurePerQuoteFilterSymbols(trades: VybeTrade[], baseMint: string): Promise<void> {
+  const need = new Set<string>();
+  for (const t of trades) {
+    const m = otherMint(t, baseMint).trim();
+    if (!m || m === baseMint) continue;
+    if (quoteSymbolCache[m] || HARDCODED_QUOTE_MINTS[m]) continue;
+    need.add(m);
+  }
+  const mints = [...need];
+  if (mints.length === 0) return;
+  const BATCH = 50;
+  for (let i = 0; i < mints.length; i += BATCH) {
+    const chunk = mints.slice(i, i + BATCH);
+    try {
+      const r = await fetchWithRetry('/api/token-symbols', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mints: chunk }),
+      });
+      if (r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { symbols?: Record<string, string> };
+        Object.assign(quoteSymbolCache, body.symbols ?? {});
+      }
+    } catch {
+      // keep cache / fallbacks
+    }
+  }
+}
+
 /** Ensure symbol cache has base and quote mints for trades (for table input/output columns). */
 async function ensureSymbolsForTrades(trades: VybeTrade[]): Promise<void> {
   const unique = new Set<string>();
@@ -2032,6 +2063,8 @@ async function enrichTradesDisplay(gen: number, queryLabel: string): Promise<voi
   if (gen !== tradeFetchGeneration) return;
   await ensureProgramLabels(lastFilteredTrades);
   if (gen !== tradeFetchGeneration) return;
+  await ensurePerQuoteFilterSymbols(lastRemoteTrades, mint);
+  if (gen !== tradeFetchGeneration) return;
   refreshTradesTableAndPerQuote(queryLabel);
 }
 
@@ -2070,6 +2103,10 @@ async function onFetch(): Promise<void> {
   loadingIndicator.setAttribute('aria-hidden', 'false');
   tradesLoading.hidden = false;
   tradesLoading.setAttribute('aria-hidden', 'false');
+  if (localFiltersLoading) {
+    localFiltersLoading.hidden = false;
+    localFiltersLoading.setAttribute('aria-hidden', 'false');
+  }
 
   try {
     // Reset UI back to empty placeholders before fetching.
@@ -2117,6 +2154,10 @@ async function onFetch(): Promise<void> {
         lastRemoteTrades = [];
         lastFilteredTrades = [];
         renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
+        if (localFiltersLoading) {
+          localFiltersLoading.hidden = true;
+          localFiltersLoading.setAttribute('aria-hidden', 'true');
+        }
         return;
       }
       const chunk = Array.isArray(body.data) ? body.data : [];
@@ -2133,6 +2174,11 @@ async function onFetch(): Promise<void> {
 
     await Promise.all([enrichChain, summaryChain]);
 
+    if (localFiltersLoading) {
+      localFiltersLoading.hidden = true;
+      localFiltersLoading.setAttribute('aria-hidden', 'true');
+    }
+
     summaryLoading.hidden = true;
     summaryLoading.setAttribute('aria-hidden', 'true');
     if (labelFromTopHoldersCheckbox?.checked) void fetchHolderLabels(mint, lastRemoteTrades);
@@ -2144,6 +2190,10 @@ async function onFetch(): Promise<void> {
     loadingIndicator.setAttribute('aria-hidden', 'true');
     tradesLoading.hidden = true;
     tradesLoading.setAttribute('aria-hidden', 'true');
+    if (localFiltersLoading) {
+      localFiltersLoading.hidden = true;
+      localFiltersLoading.setAttribute('aria-hidden', 'true');
+    }
   }
 }
 

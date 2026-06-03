@@ -159,6 +159,10 @@
         <div class="section-header">
           <span class="section-header__marker" aria-hidden="true"></span>
           <h2 class="section-header__title">Remote filters</h2>
+          <div class="section-loading" id="loadingIndicator" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
         </div>
         <p class="meta remote-filters-help">
           <strong>Remote filters</strong> fetch trades from the Vybe API and change the dataset.
@@ -284,10 +288,6 @@
           <button type="button" id="fetchBtn" class="vybe-action-btn vybe-action-btn--fetch fetch-btn-attention"><span class="vybe-action-btn__icon vybe-action-btn__icon--fetch" aria-hidden="true"></span><span class="vybe-action-btn__text">Fetch Trades</span></button>
           <button type="button" id="exportBtn" class="vybe-action-btn vybe-action-btn--export" disabled><span class="vybe-action-btn__icon vybe-action-btn__icon--export" aria-hidden="true"></span><span class="vybe-action-btn__text">Export Current Page CSV</span></button>
           <button type="button" id="exportAllBtn" class="vybe-action-btn vybe-action-btn--export" disabled><span class="vybe-action-btn__icon vybe-action-btn__icon--export-pages" aria-hidden="true"></span><span class="vybe-action-btn__text">Export Paginated CSV</span></button>
-          <div class="loading" id="loadingIndicator" hidden aria-hidden="true">
-            <span class="loading-spinner"></span>
-            <span class="loading-text">Loading…</span>
-          </div>
         </div>
 
         <details class="advanced" id="advancedDetails">
@@ -397,6 +397,10 @@
         <div class="section-header">
           <span class="section-header__marker" aria-hidden="true"></span>
           <h2 class="section-header__title">Local filters (no refetch)</h2>
+          <div class="section-loading" id="localFiltersLoading" hidden aria-hidden="true">
+            <span class="loading-spinner"></span>
+            <span class="loading-text">Loading…</span>
+          </div>
         </div>
         <p class="meta local-filters-help">
           <strong>Local filters</strong> refine the loaded trades in your browser only (no re-fetch; they just change the view).

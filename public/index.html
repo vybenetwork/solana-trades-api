@@ -408,11 +408,19 @@
           <div class="summary-box">
             <h3>Programs (top 5)</h3>
             <div class="table-wrap">
-              <table>
+              <table class="summary-mini-table summary-mini-table--programs">
+                <colgroup>
+                  <col class="summary-col-program" />
+                  <col class="summary-col-markets-stat" />
+                  <col class="summary-col-quote-tokens-stat" />
+                  <col class="summary-col-count" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th style="text-align:left">Program</th>
-                    <th style="text-align:right">Count</th>
+                    <th style="text-align:center">Markets</th>
+                    <th style="text-align:center" title="Quote tokens">Quotes</th>
+                    <th style="text-align:center">Count</th>
                   </tr>
                 </thead>
                 <tbody id="topProgramsBody"></tbody>
@@ -420,14 +428,21 @@
             </div>
           </div>
           <div class="summary-box">
-            <h3>Pools / markets (top 5)</h3>
+            <h3>Markets / Pools (Top 5)</h3>
             <div class="table-wrap">
-              <table>
+              <table class="summary-mini-table summary-mini-table--markets">
+                <colgroup>
+                  <col class="summary-col-market" />
+                  <col class="summary-col-pair" />
+                  <col class="summary-col-program" />
+                  <col class="summary-col-count" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th style="text-align:left">Market</th>
                     <th style="text-align:left">Pair</th>
-                    <th style="text-align:right">Count</th>
+                    <th style="text-align:left">Program</th>
+                    <th style="text-align:center">Count</th>
                   </tr>
                 </thead>
                 <tbody id="topMarketsBody"></tbody>
@@ -437,12 +452,19 @@
           <div class="summary-box">
             <h3>Quote mints (top 5)</h3>
             <div class="table-wrap">
-              <table>
+              <table class="summary-mini-table summary-mini-table--quotes">
+                <colgroup>
+                  <col class="summary-col-symbol" />
+                  <col class="summary-col-mint" />
+                  <col class="summary-col-markets-stat" />
+                  <col class="summary-col-count" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th style="text-align:left">Symbol</th>
                     <th style="text-align:left">Mint</th>
-                    <th style="text-align:right">Count</th>
+                    <th style="text-align:center">Markets</th>
+                    <th style="text-align:center">Count</th>
                   </tr>
                 </thead>
                 <tbody id="topQuotesBody"></tbody>

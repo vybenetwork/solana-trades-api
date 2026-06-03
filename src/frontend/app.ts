@@ -149,6 +149,8 @@ const FETCH_RETRY_DELAY_MS = 2000;
 
 let lastRemoteTrades: VybeTrade[] = [];
 let lastFilteredTrades: VybeTrade[] = [];
+/** Bumped on each fetch so in-flight enrichment skips stale runs. */
+let tradeFetchGeneration = 0;
 // Local-filtered trades excluding per-quote rules. Used to keep the per-quote table stable while tweaking per-quote min/max.
 let lastFilteredTradesForPerQuote: VybeTrade[] = [];
 let lastBaseSymbol: string | undefined;
@@ -845,16 +847,6 @@ function buildTradesQueryForTable(pageOverride?: number): string {
   if (sortField && sortDir === 'asc') params.set('sortByAsc', sortField);
   if (sortField && sortDir === 'desc') params.set('sortByDesc', sortField);
 
-  return params.toString();
-}
-
-function buildTradesQueryForSummary(): string {
-  const params = buildTradesParamsBase();
-  const limit = Number(limitSelect.value);
-  if (Number.isFinite(limit)) params.set('limit', String(limit));
-  params.set('page', '0');
-  params.set('sortByDesc', 'blockTime');
-  params.delete('sortByAsc');
   return params.toString();
 }
 
@@ -2019,6 +2011,44 @@ function downloadCsv(filename: string, csv: string): void {
   URL.revokeObjectURL(url);
 }
 
+function refreshTradesTableAndPerQuote(queryLabel: string): void {
+  lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
+  lastFilteredTradesForPerQuote = applyLocalFiltersWithoutPerQuoteRules(lastRemoteTrades);
+  renderTrades(lastFilteredTrades, {
+    remoteCount: lastRemoteTrades.length,
+    filteredCount: lastFilteredTrades.length,
+    query: queryLabel,
+  });
+  exportBtn.disabled = lastFilteredTrades.length === 0;
+  exportAllBtn.disabled = lastRemoteTrades.length === 0;
+  buildLocalFilterRows();
+}
+
+async function enrichTradesDisplay(gen: number, queryLabel: string): Promise<void> {
+  if (gen !== tradeFetchGeneration) return;
+  const mint = mintAddressInput.value.trim();
+  await ensureQuoteSymbols(lastFilteredTrades, mint);
+  if (gen !== tradeFetchGeneration) return;
+  await ensureSymbolsForTrades(lastFilteredTrades);
+  if (gen !== tradeFetchGeneration) return;
+  await ensureProgramLabels(lastFilteredTrades);
+  if (gen !== tradeFetchGeneration) return;
+  refreshTradesTableAndPerQuote(queryLabel);
+}
+
+async function refreshSummaryDisplay(gen: number): Promise<void> {
+  if (gen !== tradeFetchGeneration) return;
+  const trades = lastRemoteTrades;
+  if (trades.length === 0) {
+    renderSummaryEmpty();
+    return;
+  }
+  summaryTitle.textContent = `Last ${trades.length} trades summary`;
+  summaryMeta.textContent = `From last ${trades.length} trades: top 5 programs / pools / quote mints.`;
+  clearInlineError(summaryError);
+  await renderSummaryFromTrades(trades);
+}
+
 async function onFetch(): Promise<void> {
   clearError();
   clearInlineError(summaryError);
@@ -2052,71 +2082,60 @@ async function onFetch(): Promise<void> {
     // Fire-and-forget token metadata; should not block trades table.
     void fetchTokenMeta(mint);
 
-    // Fetch trades for summary boxes (same limit as UI).
     summaryLoading.hidden = false;
     summaryLoading.setAttribute('aria-hidden', 'false');
-    const summaryQuery = buildTradesQueryForSummary();
-    const summaryRes = await fetchWithRetry(`/api/trades?${summaryQuery}`);
-    const summaryBody = (await summaryRes.json().catch(() => ({}))) as TradesResponse & { error?: string };
-    const summaryTrades = summaryRes.ok && Array.isArray(summaryBody.data) ? summaryBody.data : [];
-    if (!summaryRes.ok) {
-      showInlineError(summaryError, summaryBody.error || `Failed (${summaryRes.status})`);
-      summaryMeta.textContent = '—';
-      summaryTitle.textContent = 'Summary unavailable';
-    } else {
-      summaryTitle.textContent = `Last ${summaryTrades.length} trades summary`;
-      summaryMeta.textContent = `From last ${summaryTrades.length} trades: top 5 programs / pools / quote mints.`;
-      await renderSummaryFromTrades(summaryTrades);
-    }
-
-    summaryLoading.hidden = true;
-    summaryLoading.setAttribute('aria-hidden', 'true');
 
     const pageFrom = parseIntOrUndefined(pageFromInput.value) ?? 0;
     const pageTo = parseIntOrUndefined(pageToInput.value);
     const pages =
       pageTo != null && pageTo > pageFrom ? Array.from({ length: pageTo - pageFrom }, (_, i) => pageFrom + i) : [pageFrom];
+    const queryLabel = pages.length > 1 ? `pages=${pageFrom}..${pageTo}` : `page=${pageFrom}`;
 
-    let allTrades: VybeTrade[];
-    const singlePage0 = pages.length === 1 && pages[0] === 0;
-    const sortIsBlockTimeDesc = (sortSelect.value || 'blockTime:desc') === 'blockTime:desc';
-    const canReuseSummary = summaryRes.ok && singlePage0 && sortIsBlockTimeDesc;
+    const fetchGen = ++tradeFetchGeneration;
+    const allTrades: VybeTrade[] = [];
+    let enrichChain: Promise<void> = Promise.resolve();
+    const scheduleEnrich = (): void => {
+      enrichChain = enrichChain
+        .then(() => enrichTradesDisplay(fetchGen, queryLabel))
+        .catch(() => {});
+    };
+    let summaryChain: Promise<void> = Promise.resolve();
+    const scheduleSummary = (): void => {
+      summaryChain = summaryChain
+        .then(() => refreshSummaryDisplay(fetchGen))
+        .catch(() => {});
+    };
 
-    if (canReuseSummary) {
-      allTrades = summaryTrades;
-    } else {
-      allTrades = [];
-      for (const p of pages) {
-        const query = buildTradesQueryForTable(p);
-        const url = `/api/trades?${query}`;
-        const res = await fetchWithRetry(url);
-        const body = (await res.json().catch(() => ({}))) as TradesResponse & { error?: string };
-        if (!res.ok) {
-          showError(body.error || `Failed (${res.status})`);
-          lastRemoteTrades = [];
-          lastFilteredTrades = [];
-          renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
-          return;
-        }
-        const chunk = Array.isArray(body.data) ? body.data : [];
-        allTrades.push(...chunk);
+    for (const p of pages) {
+      const query = buildTradesQueryForTable(p);
+      const res = await fetchWithRetry(`/api/trades?${query}`);
+      const body = (await res.json().catch(() => ({}))) as TradesResponse & { error?: string };
+      if (!res.ok) {
+        showError(body.error || `Failed (${res.status})`);
+        showInlineError(summaryError, body.error || `Failed (${res.status})`);
+        summaryMeta.textContent = '—';
+        summaryTitle.textContent = 'Summary unavailable';
+        lastRemoteTrades = [];
+        lastFilteredTrades = [];
+        renderTrades([], { remoteCount: 0, filteredCount: 0, query: '' });
+        return;
       }
+      const chunk = Array.isArray(body.data) ? body.data : [];
+      allTrades.push(...chunk);
+      lastRemoteTrades = allTrades;
+      if (lastRemoteTrades.length > 0) {
+        summaryTitle.textContent = `Last ${lastRemoteTrades.length} trades summary`;
+        summaryMeta.textContent = `From last ${lastRemoteTrades.length} trades: top 5 programs / pools / quote mints.`;
+      }
+      refreshTradesTableAndPerQuote(queryLabel);
+      scheduleEnrich();
+      scheduleSummary();
     }
 
-    lastRemoteTrades = allTrades;
-    lastFilteredTrades = applyLocalFilters(lastRemoteTrades);
-    lastFilteredTradesForPerQuote = applyLocalFiltersWithoutPerQuoteRules(lastRemoteTrades);
-    await ensureQuoteSymbols(lastFilteredTrades, mintAddressInput.value.trim());
-    await ensureSymbolsForTrades(lastFilteredTrades);
-    await ensureProgramLabels(lastFilteredTrades);
-    renderTrades(lastFilteredTrades, {
-      remoteCount: lastRemoteTrades.length,
-      filteredCount: lastFilteredTrades.length,
-      query: pages.length > 1 ? `pages=${pageFrom}..${pageTo}` : `page=${pageFrom}`,
-    });
-    exportBtn.disabled = lastFilteredTrades.length === 0;
-    exportAllBtn.disabled = lastRemoteTrades.length === 0;
-    buildLocalFilterRows();
+    await Promise.all([enrichChain, summaryChain]);
+
+    summaryLoading.hidden = true;
+    summaryLoading.setAttribute('aria-hidden', 'true');
     if (labelFromTopHoldersCheckbox?.checked) void fetchHolderLabels(mint, lastRemoteTrades);
   } catch (err) {
     showError(err instanceof Error ? err.message : String(err));

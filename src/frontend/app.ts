@@ -501,6 +501,28 @@ function wrapCellWithVolumeBars(mainHtml: string, barsHtml: string): string {
   return `<span class="trades-cell-with-volume"><span class="trades-cell-with-volume__bars">${barsHtml}</span><span class="trades-cell-with-volume__main">${mainHtml}</span></span>`;
 }
 
+const AUTHORITY_FREQUENCY_BAR_COLOR = '#60a5fa';
+
+function renderAuthorityTxCountSuffix(
+  authorityKey: string,
+  authorityCounts: Map<string, number>,
+  authorityCountRange: { min: number; max: number } | null
+): string {
+  if (!authorityKey) return '';
+  const count = authorityCounts.get(authorityKey);
+  if (count == null || count === 0) return '';
+  const txLabel = count === 1 ? 'TX' : 'TXs';
+  const countMain = `<span class="authority-tx-count">${count.toLocaleString()} ${txLabel}</span>`;
+  const bars = renderScopedFrequencyBars(
+    authorityKey,
+    authorityCounts,
+    authorityCountRange,
+    'Authority frequency',
+    AUTHORITY_FREQUENCY_BAR_COLOR
+  );
+  return bars ? wrapCellWithVolumeBars(countMain, bars) : countMain;
+}
+
 /** Outlined pool symbol chip in market column (stables / SOL / other colours unchanged). */
 function renderMarketPoolChip(symbol: string, toneClass: string): string {
   const label = (symbol || '').trim();
@@ -1584,6 +1606,8 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
   const volumeRange = computeAnalysedTokenVolumeRange(trades, analysedMint);
   const marketCounts = computeEntityTradeCounts(trades, (t) => (t.marketAddress ?? '').trim());
   const marketCountRange = minMaxFromEntityCounts(marketCounts);
+  const authorityCounts = computeEntityTradeCounts(trades, (t) => (t.authorityAddress ?? '').trim());
+  const authorityCountRange = minMaxFromEntityCounts(authorityCounts);
 
   tradesBody.innerHTML = trades.length
     ? trades
@@ -1681,8 +1705,10 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
           const showHolderLabels = labelFromTopHoldersCheckbox?.checked === true;
           const authLabel = showHolderLabels && authority && holderLabelCache[authority] ? `<span class="holder-label">${escapeHtml(holderLabelCache[authority])}</span> ` : '';
           const feeLabel = showHolderLabels && feePayer && holderLabelCache[feePayer] ? `<span class="holder-label">${escapeHtml(holderLabelCache[feePayer])}</span> ` : '';
+          const authorityTxCount = renderAuthorityTxCountSuffix(authority, authorityCounts, authorityCountRange);
+          const txCountBlock = authorityTxCount ? `<br>${authorityTxCount}` : '';
           const feePayerLink = feePayer
-            ? `<span class="fee-payer-cell">(${feeLabel}${vybeLinkAccount(feePayer, truncate(feePayer, 4, 4))})</span>`
+            ? `<span class="fee-payer-cell">(${feeLabel}${vybeLinkAccount(feePayer, truncate(feePayer, 4, 4))}${txCountBlock})</span>`
             : '';
           const hasTwoValues = !!(authority && feePayer && authority !== feePayer);
           const authorityFeePayerCellClass = hasTwoValues ? 'authority-fee-payer-double' : 'authority-fee-payer-single';
@@ -1690,11 +1716,11 @@ function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filtered
             !authority && !feePayer
               ? '—'
               : authority === feePayer
-                ? `${authLabel}${vybeLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))}`
+                ? `${authLabel}${vybeLinkAccount(authority || undefined, truncate(authority || undefined, 4, 4))}${txCountBlock}`
                 : authority && feePayer
                   ? `<span class="authority-main-value">${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}</span><br>${feePayerLink}`
                   : authority
-                    ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}`
+                    ? `${authLabel}${vybeLinkAccount(authority, truncate(authority, 4, 4))}${txCountBlock}`
                     : feePayer
                       ? feePayerLink
                       : '—';

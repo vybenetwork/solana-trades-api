@@ -991,15 +991,17 @@ function buildPerQuotePlaceholderTable(): void {
   const rows = Array.from({ length: PER_QUOTE_PLACEHOLDER_ROW_COUNT }, () => {
     const dashCell = perQuotePlaceholderInputCell('—');
     return `<tr class="per-quote-placeholder-row">
-      <td><div>—</div><div class="meta">(—/—)</div></td>
-      <td style="text-align:center"><label class="per-quote-status"><input type="checkbox" class="per-quote-exclude" disabled tabindex="-1" aria-hidden="true" /><span class="per-quote-status-text">—</span></label></td>
+      <td class="per-quote-quote-cell"><div class="per-quote-quote-main"><span class="per-quote-placeholder-chip">—</span><span class="meta per-quote-count-meta">(—/—)</span></div></td>
+      <td class="per-quote-stat-cell"><span class="per-quote-placeholder-dash">—</span></td>
+      <td class="per-quote-stat-cell"><span class="per-quote-placeholder-dash">—</span></td>
+      <td class="per-quote-status-cell"><span class="per-quote-placeholder-dash">—</span></td>
       <td>${dashCell}</td>
       <td>${dashCell}</td>
       <td>${dashCell}</td>
       <td>${dashCell}</td>
     </tr>`;
   }).join('');
-  perQuoteFiltersContainer.innerHTML = `<table class="per-quote-table per-quote-table--placeholder"><thead><tr><th>Quote</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody>${rows}<tr class="per-quote-show-all-row"><td colspan="6" style="text-align:center"><button type="button" class="per-quote-show-all-btn" disabled>Show all (— total)</button></td></tr></tbody></table>`;
+  perQuoteFiltersContainer.innerHTML = `<table class="per-quote-table per-quote-table--placeholder"><thead><tr><th>Quote</th><th style="text-align:center">Markets</th><th style="text-align:center">Programs</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody>${rows}<tr class="per-quote-show-all-row"><td colspan="8" style="text-align:center"><button type="button" class="per-quote-show-all-btn" disabled>Show all (— total)</button></td></tr></tbody></table>`;
 }
 
 /**
@@ -1077,6 +1079,8 @@ function buildLocalFilterRows(): void {
   // We sort all quote mints by total count, but we do NOT slice here so that
   // "Show all" truly shows all mints, even those with a single trade.
   const topQuotes = [...totalQuoteCounts.entries()].sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+  const quoteMarketCounts = computeQuoteMintMarketCounts(lastRemoteTrades, baseMint);
+  const quoteProgramCounts = computeQuoteMintProgramCounts(lastRemoteTrades, baseMint);
 
   function quoteLabel(mint: string): string {
     return quoteSymbolCache[mint] || HARDCODED_QUOTE_MINTS[mint] || truncate(mint, 4, 4);
@@ -1125,7 +1129,8 @@ function buildLocalFilterRows(): void {
   perQuoteFiltersContainer.innerHTML = '';
   if (topQuotes.length > 0) {
     const table = document.createElement('table');
-    table.innerHTML = `<thead><tr><th>Quote</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody></tbody>`;
+    table.className = 'per-quote-table';
+    table.innerHTML = `<thead><tr><th>Quote</th><th style="text-align:center">Markets</th><th style="text-align:center">Programs</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody></tbody>`;
     const tbody = table.querySelector('tbody')!;
     const TOP_VISIBLE = 3;
     for (let i = 0; i < topQuotes.length; i++) {
@@ -1146,15 +1151,20 @@ function buildLocalFilterRows(): void {
       const maxP = b?.maxPrice ?? '';
       const fmt = (x: number | '' | undefined) => (x !== '' && x != null && Number.isFinite(x) ? formatDecimalForDisplay(x) : '');
       const quoteSym = quoteLabelShort(quoteMint);
+      const quoteChip = renderQuoteSymbolChip(quoteSym);
       const totalForMint = totalQuoteCounts.get(quoteMint) ?? count;
       const filteredForMint = filteredQuoteCounts.get(quoteMint) ?? 0;
+      const marketsForMint = quoteMarketCounts.get(quoteMint) ?? 0;
+      const programsForMint = quoteProgramCounts.get(quoteMint) ?? 0;
       const cell = (inputHtml: string, currency: string, wrapClass: string) =>
         `<div class="per-quote-cell"><div class="per-quote-input-wrap ${wrapClass}">${inputHtml}<span class="per-quote-currency">${currency}</span><div class="per-quote-spinners"><button type="button" class="per-quote-spin per-quote-spin-up" aria-label="Increase"></button><button type="button" class="per-quote-spin per-quote-spin-down" aria-label="Decrease"></button></div></div></div>`;
       const inp = (attr: string, ph: string, val: string, dmin: string, dmax: string) =>
         `<input type="number" step="any" placeholder="${ph}" ${attr} data-min="${dmin}" data-max="${dmax}" value="${val}" />`;
       tr.innerHTML = `
-        <td title="${quoteMint}"><div>${quoteSym}</div><div class="meta">(${isExcluded ? 0 : filteredForMint}/${totalForMint})</div></td>
-        <td style="text-align:center"><label class="per-quote-status"><input type="checkbox" class="per-quote-exclude" ${isExcluded ? 'checked' : ''} aria-label="Exclude ${quoteSym}" /><span class="per-quote-status-text">${isExcluded ? 'Excluded' : 'Included'}</span></label></td>
+        <td class="per-quote-quote-cell" title="${escapeHtml(quoteMint)}"><div class="per-quote-quote-main">${quoteChip}<span class="meta per-quote-count-meta">(${isExcluded ? 0 : filteredForMint}/${totalForMint})</span></div></td>
+        <td class="per-quote-stat-cell">${marketsForMint.toLocaleString()}</td>
+        <td class="per-quote-stat-cell">${programsForMint.toLocaleString()}</td>
+        <td class="per-quote-status-cell"><label class="per-quote-status"><input type="checkbox" class="per-quote-exclude" ${isExcluded ? 'checked' : ''} aria-label="Exclude ${quoteSym}" /><span class="per-quote-status-text">${isExcluded ? 'Excluded' : 'Included'}</span></label></td>
         <td>${cell(inp('data-quote-min-q', fmt(minQ), fmt(clamped.minQuoteSize), String(minQ), String(maxQ)), quoteSym, 'per-quote-is-min')}</td>
         <td>${cell(inp('data-quote-max-q', fmt(maxQ), fmt(clamped.maxQuoteSize), String(minQ), String(maxQ)), quoteSym, 'per-quote-is-max')}</td>
         <td>${cell(inp('data-quote-min-p', fmt(minP), fmt(clamped.minPrice), String(b?.minPrice ?? ''), String(b?.maxPrice ?? '')), quoteSym, 'per-quote-is-min')}</td>
@@ -1311,7 +1321,7 @@ function buildLocalFilterRows(): void {
       const buttonRow = document.createElement('tr');
       buttonRow.className = 'per-quote-show-all-row';
       const td = document.createElement('td');
-      td.colSpan = 6;
+      td.colSpan = 8;
       td.style.textAlign = 'center';
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1569,6 +1579,27 @@ function computeQuoteMintMarketCounts(trades: VybeTrade[], baseMint: string): Ma
   const counts = new Map<string, number>();
   for (const [quote, marketSet] of marketsByQuote) {
     counts.set(quote, marketSet.size);
+  }
+  return counts;
+}
+
+function computeQuoteMintProgramCounts(trades: VybeTrade[], baseMint: string): Map<string, number> {
+  const programsByQuote = new Map<string, Set<string>>();
+  for (const t of trades) {
+    const quote = otherMint(t, baseMint).trim();
+    if (!quote || quote === baseMint) continue;
+    const prog = (t.programAddress ?? '').trim();
+    if (!prog) continue;
+    let programSet = programsByQuote.get(quote);
+    if (!programSet) {
+      programSet = new Set();
+      programsByQuote.set(quote, programSet);
+    }
+    programSet.add(prog);
+  }
+  const counts = new Map<string, number>();
+  for (const [quote, programSet] of programsByQuote) {
+    counts.set(quote, programSet.size);
   }
   return counts;
 }

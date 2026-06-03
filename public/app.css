@@ -1213,21 +1213,86 @@ button:disabled {
   width: 28%;
 }
 
-.summary-box .summary-mini-table--markets col.summary-col-market {
-  width: 31%;
+.summary-box .summary-mini-table--markets {
+  table-layout: fixed;
+  width: 100%;
 }
 
-.summary-box .summary-mini-table--markets col.summary-col-pair {
-  width: 17%;
+.summary-box .summary-mini-table--markets col.summary-col-market {
+  width: 84px !important;
 }
 
 .summary-box .summary-mini-table--markets col.summary-col-program {
-  width: 30%;
+  width: 105px !important;
+  min-width: 105px !important;
+}
+
+.summary-box .summary-mini-table--markets col.summary-col-pair {
+  width: auto;
 }
 
 .summary-box .summary-mini-table--markets col.summary-col-count {
-  width: 22%;
+  width: 76px !important;
+  min-width: 76px !important;
 }
+
+.summary-box .summary-mini-table--markets thead th:nth-child(4),
+.summary-box .summary-mini-table--markets tbody td.summary-cell-count {
+  width: 76px !important;
+  min-width: 76px !important;
+  max-width: 76px !important;
+  box-sizing: border-box;
+}
+
+.summary-box .summary-mini-table--markets thead th:nth-child(3),
+.summary-box .summary-mini-table--markets tbody td.summary-cell-program {
+  width: 105px !important;
+  min-width: 105px !important;
+  max-width: 105px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.summary-box .summary-mini-table--markets .summary-cell-program .program-dex-chip-link {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.summary-box .summary-mini-table--markets .summary-cell-program .program-dex-chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-box .summary-mini-table--markets thead th:first-child,
+.summary-box .summary-mini-table--markets tbody td.summary-cell-market {
+  width: 84px !important;
+  max-width: 84px !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-size: calc(0.66rem * 1.15 * 0.92);
+}
+
+.summary-box .summary-mini-table--markets .summary-cell-market .market-cell-link {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.summary-box .summary-mini-table--markets .summary-cell-market .market-address-label {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(0.58rem * 1.15 * 0.92);
+}
+
 
 .summary-box .summary-mini-table--quotes col.summary-col-symbol {
   width: 20%;
@@ -1292,6 +1357,11 @@ button:disabled {
   text-align: center;
 }
 
+.summary-box .summary-mini-table th,
+.summary-box .summary-mini-table td {
+  box-sizing: border-box;
+}
+
 .summary-box .summary-mini-table td {
   padding: 0.28rem 0.35rem;
   font-size: calc(0.66rem * 1.15);
@@ -1339,7 +1409,7 @@ button:disabled {
 }
 
 .summary-box .summary-tx-count-num {
-  font-size: 1.3em;
+  font-size: 1.18em;
   font-weight: 600;
 }
 
@@ -1382,6 +1452,32 @@ button:disabled {
 
 .summary-box .summary-cell-count .trade-volume-bars {
   flex-shrink: 0;
+  height: 11px;
+  gap: 1.5px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar {
+  width: 2.5px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar:nth-child(1) {
+  height: 3px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar:nth-child(2) {
+  height: 4.5px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar:nth-child(3) {
+  height: 6px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar:nth-child(4) {
+  height: 7.5px;
+}
+
+.summary-box .summary-cell-count .trade-volume-bar:nth-child(5) {
+  height: 9px;
 }
 
 .summary-box .summary-mini-table .program-dex-chip-link {
@@ -2569,6 +2665,134 @@ tr:hover td {
   font-size: 0.7rem;
 }
 
+.local-filters-dynamic .per-quote-quote-cell {
+  vertical-align: middle;
+  max-width: 155px;
+  overflow: hidden;
+}
+
+.local-filters-dynamic .per-quote-quote-main {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.local-filters-dynamic .per-quote-quote-main .per-quote-count-meta {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+
+.local-filters-dynamic .per-quote-table .market-pool-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.local-filters-dynamic .per-quote-table .market-pool-chip.amount-usdc {
+  color: #86efac;
+}
+
+.local-filters-dynamic .per-quote-table .market-pool-chip.amount-sol {
+  color: #c4b5fd;
+}
+
+.local-filters-dynamic .per-quote-table .market-pool-chip.market-other-yellow {
+  color: #facc15;
+}
+
+.local-filters-dynamic .per-quote-table .market-pool-chip.market-pool-chip--neutral {
+  color: #a1a1aa;
+}
+
+.local-filters-dynamic .per-quote-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.local-filters-dynamic .per-quote-table th:first-child,
+.local-filters-dynamic .per-quote-table td.per-quote-quote-cell {
+  width: 155px;
+  max-width: 155px;
+  min-width: 0;
+}
+
+.local-filters-dynamic .per-quote-table thead th:nth-child(2),
+.local-filters-dynamic .per-quote-table tbody td.per-quote-stat-cell:nth-child(2) {
+  width: 80px;
+  max-width: 80px;
+  min-width: 80px;
+  box-sizing: border-box;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+.local-filters-dynamic .per-quote-table thead th:nth-child(3),
+.local-filters-dynamic .per-quote-table tbody td.per-quote-stat-cell:nth-child(3) {
+  width: 80px;
+  max-width: 80px;
+  min-width: 80px;
+  box-sizing: border-box;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+.local-filters-dynamic .per-quote-table thead th:nth-child(4),
+.local-filters-dynamic .per-quote-table tbody td.per-quote-status-cell {
+  width: 100px;
+  max-width: 100px;
+  min-width: 100px;
+  box-sizing: border-box;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+}
+
+.local-filters-dynamic .per-quote-stat-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #d4d4d8;
+  vertical-align: middle;
+}
+
+.local-filters-dynamic .per-quote-status-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.local-filters-dynamic .per-quote-placeholder-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid #52525b;
+  border-radius: 4px;
+  color: #71717a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.local-filters-dynamic .per-quote-placeholder-dash {
+  display: block;
+  text-align: center;
+  color: #71717a;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .local-filters-dynamic .per-quote-exclude {
   width: 1rem;
   height: 1rem;
@@ -2753,6 +2977,10 @@ tr:hover td {
   max-height: 31px;
   box-sizing: border-box;
   vertical-align: middle;
+}
+
+.local-filters-dynamic tbody tr.per-quote-placeholder-row .per-quote-count-meta {
+  color: #71717a;
 }
 
 .local-filters-dynamic .per-quote-table--placeholder .per-quote-show-all-btn:disabled {

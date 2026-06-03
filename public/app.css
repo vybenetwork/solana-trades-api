@@ -1148,7 +1148,8 @@ button:disabled {
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.5rem;
-  min-height: 1.5em;
+  min-height: 40px;
+  max-height: 40px;
 }
 
 .section-header h2,
@@ -3112,6 +3113,8 @@ tr:hover td {
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.75rem 1rem;
+  min-height: 48px;
+  max-height: 48px;
   margin-bottom: 0.85rem;
   margin-left: 5px;
 }

@@ -169,7 +169,7 @@ app.get('/api/trades', async (req: Request, res: Response) => {
     }
 
     const limitRaw = qNum(req, 'limit');
-    const limit = limitRaw != null ? Math.min(Math.max(0, limitRaw), 1000) : 250;
+    const limit = limitRaw != null ? Math.min(Math.max(0, limitRaw), 1000) : 1000;
     const pageRaw = qNum(req, 'page');
     const page = pageRaw != null ? Math.max(0, Math.trunc(pageRaw)) : undefined;
 

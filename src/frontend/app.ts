@@ -538,7 +538,7 @@ function renderAuthorityCountCell(
   const tierClass = authorityTxTierClass(count);
   const barColor = authorityTxTierColor(count);
   const txLabel = count === 1 ? 'TX' : 'TXs';
-  const countMain = `<span class="authority-tx-count ${tierClass}">${count.toLocaleString()} ${txLabel}</span>`;
+  const countMain = `<span class="authority-tx-count ${tierClass}"><span class="authority-tx-count-num">${count.toLocaleString()}</span> <span class="authority-tx-count-label">${txLabel}</span></span>`;
   const bars = renderScopedFrequencyBars(
     authorityKey,
     authorityCounts,
@@ -1968,7 +1968,7 @@ exportAllBtn.addEventListener('click', async () => {
 
   try {
     const query = buildTradesQueryForTable();
-    const limit = Number(limitSelect.value) || 250;
+    const limit = Number(limitSelect.value) || 1000;
     const maxPages = Math.max(1, Math.trunc(Number(maxPagesInput.value || '50')));
 
     // Export pulls pages starting from pageFrom.

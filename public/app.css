@@ -3012,9 +3012,16 @@ tr:hover td {
   color: #71717a;
 }
 
-.local-filters-dynamic .per-quote-table--placeholder .per-quote-show-all-btn:disabled {
-  opacity: 0.85;
-  cursor: default;
+.local-filters-dynamic .per-quote-table--placeholder .per-quote-show-all-btn:disabled,
+.local-filters-dynamic .per-quote-show-all-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  animation: none;
+  transform: none;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: none;
 }
 
 .local-filters-dynamic .per-quote-show-all-row td {
@@ -3024,18 +3031,58 @@ tr:hover td {
 
 .local-filters-dynamic .per-quote-show-all-btn {
   font-size: 0.8rem;
-  color: #a1a1aa;
-  background: transparent;
-  border: 1px solid #3f3f46;
-  border-radius: 6px;
-  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+  color: #dbeafe;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 52%, #1d4ed8 100%);
+  border: 1px solid #60a5fa;
+  border-radius: 8px;
+  padding: 0.42rem 0.9rem;
   cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.45) inset,
+    0 2px 5px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(59, 130, 246, 0.55);
+  animation: per-quote-show-all-pulse 1.2s ease-in-out infinite;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.local-filters-dynamic .per-quote-show-all-btn:hover {
-  color: #e4e4e7;
-  background: #27272a;
-  border-color: #52525b;
+.local-filters-dynamic .per-quote-show-all-btn:hover:not(:disabled) {
+  color: #fff;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 55%, #2563eb 100%);
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.local-filters-dynamic .per-quote-show-all-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.2) inset,
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes per-quote-show-all-pulse {
+  0% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 -2px 0 rgba(15, 23, 42, 0.45) inset,
+      0 2px 5px rgba(0, 0, 0, 0.4),
+      0 0 0 0 rgba(59, 130, 246, 0.85);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 -2px 0 rgba(15, 23, 42, 0.45) inset,
+      0 2px 5px rgba(0, 0, 0, 0.4),
+      0 0 0 7px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.28) inset,
+      0 -2px 0 rgba(15, 23, 42, 0.45) inset,
+      0 2px 5px rgba(0, 0, 0, 0.4),
+      0 0 0 0 rgba(59, 130, 246, 0);
+  }
 }
 
 .field-checkbox label {

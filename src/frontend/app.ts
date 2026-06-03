@@ -979,7 +979,8 @@ const TOP_QUOTE_MINTS_FOR_FILTER = 10;
 /** Observed min/max from last fetch, used to lock per-quote inputs. */
 let quoteBounds: Record<string, { minQuoteSize: number; maxQuoteSize: number; minPrice: number; maxPrice: number }> = {};
 
-const PER_QUOTE_PLACEHOLDER_ROW_COUNT = 3;
+const PER_QUOTE_PLACEHOLDER_ROW_COUNT = 5;
+const PER_QUOTE_TOP_VISIBLE = 5;
 
 function perQuotePlaceholderInputCell(currency: string): string {
   return `<div class="per-quote-cell"><div class="per-quote-input-wrap per-quote-wrap-disabled"><input type="number" step="any" disabled placeholder="—" value="" /><span class="per-quote-currency">${currency}</span><div class="per-quote-spinners"><button type="button" class="per-quote-spin per-quote-spin-up" disabled aria-label="Increase"></button><button type="button" class="per-quote-spin per-quote-spin-down" disabled aria-label="Decrease"></button></div></div></div>`;
@@ -1132,7 +1133,7 @@ function buildLocalFilterRows(): void {
     table.className = 'per-quote-table';
     table.innerHTML = `<thead><tr><th>Quote</th><th style="text-align:center">Markets</th><th style="text-align:center">Programs</th><th style="text-align:center">Status</th><th>Min quote size</th><th>Max quote size</th><th>Min price</th><th>Max price</th></tr></thead><tbody></tbody>`;
     const tbody = table.querySelector('tbody')!;
-    const TOP_VISIBLE = 3;
+    const TOP_VISIBLE = PER_QUOTE_TOP_VISIBLE;
     for (let i = 0; i < topQuotes.length; i++) {
       const [quoteMint, count] = topQuotes[i];
       const b = quoteBounds[quoteMint];

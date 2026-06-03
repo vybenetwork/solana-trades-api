@@ -439,6 +439,18 @@ function minMaxFromEntityCounts(counts: Map<string, number>): { min: number; max
   return { min, max };
 }
 
+/** Compact integer for TX count columns: 1194 → "1.2k", 1.1M, 2.5b. */
+function formatCompactCount(n: number): string {
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  const trim = (s: string) => s.replace(/\.0$/, '');
+  if (abs >= 1e9) return `${sign}${trim((abs / 1e9).toFixed(1))}b`;
+  if (abs >= 1e6) return `${sign}${trim((abs / 1e6).toFixed(1))}m`;
+  if (abs >= 1000) return `${sign}${trim((abs / 1000).toFixed(1))}k`;
+  return `${sign}${Math.round(abs).toLocaleString()}`;
+}
+
 /** 1 bar = 0–20%, …, 5 bars = 80–100% of analysed-token amount in the loaded set. */
 function volumeBarsFromPercentile(percentile: number): number {
   if (percentile >= 80) return 5;
@@ -540,8 +552,9 @@ function renderAuthorityCountCell(
   if (count == null || count === 0) return '—';
   const tierClass = authorityTxTierClass(count);
   const barColor = authorityTxTierColor(count);
+  const countCompact = formatCompactCount(count);
   const txLabel = count === 1 ? 'TX' : 'TXs';
-  const countMain = `<span class="authority-tx-count ${tierClass}"><span class="authority-tx-count-num">${count.toLocaleString()}</span> <span class="authority-tx-count-label">${txLabel}</span></span>`;
+  const countMain = `<span class="authority-tx-count ${tierClass}"><span class="authority-tx-count-num">${countCompact}</span> <span class="authority-tx-count-label">${txLabel}</span></span>`;
   const bars = renderScopedFrequencyBars(
     authorityKey,
     authorityCounts,
@@ -634,8 +647,9 @@ function renderSummaryCountCell(
   if (!entityKey || count <= 0) return '—';
   const activeBars = activeBarCountForEntity(entityKey, entityCounts, countRange);
   const { tierClass, color: barColor } = summaryBarTierFromActiveBars(activeBars || 1);
+  const countCompact = formatCompactCount(count);
   const txLabel = count === 1 ? 'TX' : 'TXs';
-  const countMain = `<span class="summary-tx-count"><span class="summary-tx-count-num">${count.toLocaleString()}</span> <span class="summary-tx-count-label">${txLabel}</span></span>`;
+  const countMain = `<span class="summary-tx-count"><span class="summary-tx-count-num">${countCompact}</span> <span class="summary-tx-count-label">${txLabel}</span></span>`;
   const bars =
     activeBars > 0
       ? renderColoredVolumeBars(activeBars, barColor, 'Trade count')

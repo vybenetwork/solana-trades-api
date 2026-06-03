@@ -113,7 +113,7 @@ const TOP_MARKETS_PLACEHOLDER_ROW_HTML =
   '<tr class="summary-placeholder-row"><td>—</td><td>—</td><td>—</td><td class="summary-cell-count">—</td></tr>';
 
 const TOP_QUOTES_PLACEHOLDER_ROW_HTML =
-  '<tr class="summary-placeholder-row"><td>—</td><td>—</td><td class="summary-cell-stat">—</td><td class="summary-cell-count">—</td></tr>';
+  '<tr class="summary-placeholder-row"><td>—</td><td>—</td><td class="summary-cell-stat">—</td><td class="summary-cell-stat">—</td><td class="summary-cell-count">—</td></tr>';
 
 function buildTopProgramsPlaceholderRowsHtml(): string {
   return Array.from({ length: TOP_SUMMARY_PLACEHOLDER_ROW_COUNT }, () => TOP_PROGRAMS_PLACEHOLDER_ROW_HTML).join('');
@@ -1786,6 +1786,7 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
   const quoteCountsMap = new Map(quotes.map((q) => [q.key, q.count]));
   const quoteCountRange = minMaxFromEntityCounts(quoteCountsMap);
   const quoteMarketCounts = computeQuoteMintMarketCounts(trades, baseMint);
+  const quoteProgramCounts = computeQuoteMintProgramCounts(trades, baseMint);
 
   topQuotesBody.innerHTML = quotes.length
     ? quotes
@@ -1794,10 +1795,12 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
           const tone = quoteSymbolToneClass(sym);
           const mintLink = `<a href="${SOLSCAN_ACCOUNT}${encodeURIComponent(q.key)}" target="_blank" class="market-cell-link" title="${escapeHtml(q.key)}">${renderMarketAddressLabel(truncate(q.key, 4, 4), tone)}</a>`;
           const marketTotal = quoteMarketCounts.get(q.key) ?? 0;
+          const programTotal = quoteProgramCounts.get(q.key) ?? 0;
           return `<tr>
             <td class="summary-cell-symbol">${renderQuoteSymbolChip(sym)}</td>
             <td class="summary-cell-mint">${mintLink}</td>
             <td class="summary-cell-stat">${marketTotal.toLocaleString()}</td>
+            <td class="summary-cell-stat">${programTotal.toLocaleString()}</td>
             <td class="summary-cell-count">${renderSummaryCountCell(q.key, q.count, quoteCountsMap, quoteCountRange)}</td>
           </tr>`;
         })

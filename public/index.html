@@ -39,7 +39,7 @@
     <meta name="twitter:image:alt" content="Solana Historical Trade Data API app powered by Vybe API" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="app.css?v=108" />
+    <link rel="stylesheet" href="app.css?v=109" />
   </head>
   <body>
     <div class="container">
@@ -172,16 +172,18 @@
       </header>
 
       <section class="section-card section-card--remote inputs panel">
-        <div class="section-header">
-          <span class="section-header__marker" aria-hidden="true"></span>
-          <h2 class="section-header__title">Remote Filters</h2>
-          <div class="section-loading" id="loadingIndicator" hidden aria-hidden="true">
-            <span class="loading-spinner"></span>
-            <span class="loading-text">Loading…</span>
+        <div class="section-heading">
+          <div class="section-header">
+            <span class="section-header__marker" aria-hidden="true"></span>
+            <h2 class="section-header__title">Remote Filters</h2>
+            <div class="section-loading" id="loadingIndicator" hidden aria-hidden="true">
+              <span class="loading-spinner"></span>
+              <span class="loading-text">Loading…</span>
+            </div>
           </div>
-        </div>
-        <div class="section-lede meta remote-filters-help">
-          <strong>Remote filters</strong> fetch trades from the Vybe API and change the dataset.
+          <div class="section-lede meta remote-filters-help">
+            <strong>Remote filters</strong> fetch trades from the Vybe API and change the dataset.
+          </div>
         </div>
         <div class="field">
           <label for="mintAddress">
@@ -410,16 +412,18 @@
       </section>
 
       <section class="section-card section-card--local panel local-filters-panel">
-        <div class="section-header">
-          <span class="section-header__marker" aria-hidden="true"></span>
-          <h2 class="section-header__title">Local Filters (No Refetch)</h2>
-          <div class="section-loading" id="localFiltersLoading" hidden aria-hidden="true">
-            <span class="loading-spinner"></span>
-            <span class="loading-text">Loading…</span>
+        <div class="section-heading">
+          <div class="section-header">
+            <span class="section-header__marker" aria-hidden="true"></span>
+            <h2 class="section-header__title">Local Filters (No Refetch)</h2>
+            <div class="section-loading" id="localFiltersLoading" hidden aria-hidden="true">
+              <span class="loading-spinner"></span>
+              <span class="loading-text">Loading…</span>
+            </div>
           </div>
-        </div>
-        <div class="section-lede meta local-filters-help">
-          <strong>Local filters</strong> refine the loaded trades in your browser only (no re-fetch; they just change the view).
+          <div class="section-lede meta local-filters-help">
+            <strong>Local filters</strong> refine the loaded trades in your browser only (no re-fetch; they just change the view).
+          </div>
         </div>
         <div class="local-filters">
           <h3 class="local-filters-subtitle">Global</h3>

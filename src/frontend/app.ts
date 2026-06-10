@@ -1860,8 +1860,14 @@ function updateTradesSummary(trades: VybeTrade[], meta: { remoteCount: number; f
   }
 }
 
+function formatTradesMeta(meta: { remoteCount: number; filteredCount: number; query: string }): string {
+  if (meta.remoteCount === 0) return '—';
+  const queryPart = meta.query ? ` (${meta.query})` : '';
+  return `Remote: ${meta.remoteCount.toLocaleString()} trade(s)${queryPart}. Showing: ${meta.filteredCount.toLocaleString()} after local filters.`;
+}
+
 function renderTrades(trades: VybeTrade[], meta: { remoteCount: number; filteredCount: number; query: string }): void {
-  tradesMeta.textContent = '';
+  tradesMeta.textContent = formatTradesMeta(meta);
   updateTradesSummary(trades, meta);
   tradesTable?.classList.toggle('trades-table--placeholder', trades.length === 0);
   const programColorMap = buildProgramGroupColorMap(trades);
@@ -2092,7 +2098,7 @@ async function refreshSummaryDisplay(gen: number): Promise<void> {
     renderSummaryEmpty();
     return;
   }
-  summaryTitle.textContent = `Last ${trades.length} trades summary`;
+  summaryTitle.textContent = `Last ${trades.length} Trades Summary`;
   summaryMeta.textContent = `From last ${trades.length} trades: top 5 programs / pools / quote mints.`;
   clearInlineError(summaryError);
   await renderSummaryFromTrades(trades);
@@ -2181,7 +2187,7 @@ async function onFetch(): Promise<void> {
       allTrades.push(...chunk);
       lastRemoteTrades = allTrades;
       if (lastRemoteTrades.length > 0) {
-        summaryTitle.textContent = `Last ${lastRemoteTrades.length} trades summary`;
+        summaryTitle.textContent = `Last ${lastRemoteTrades.length} Trades Summary`;
         summaryMeta.textContent = `From last ${lastRemoteTrades.length} trades: top 5 programs / pools / quote mints.`;
       }
       refreshTradesTableAndPerQuote(queryLabel);

@@ -138,6 +138,22 @@ const summaryMeta = document.getElementById('summaryMeta') as HTMLElement;
 const topProgramsBody = document.getElementById('topProgramsBody') as HTMLElement;
 const topMarketsBody = document.getElementById('topMarketsBody') as HTMLElement;
 const topQuotesBody = document.getElementById('topQuotesBody') as HTMLElement;
+const topProgramsTitle = document.getElementById('topProgramsTitle') as HTMLElement | null;
+const topMarketsTitle = document.getElementById('topMarketsTitle') as HTMLElement | null;
+const topQuotesTitle = document.getElementById('topQuotesTitle') as HTMLElement | null;
+
+const SUMMARY_TOP_MAX = 5;
+
+function summaryBoxTitle(label: string, itemCount: number): string {
+  const n = itemCount > 0 ? itemCount : SUMMARY_TOP_MAX;
+  return `${label} (Top ${n})`;
+}
+
+function updateSummaryBoxTitles(programs: number, markets: number, quotes: number): void {
+  if (topProgramsTitle) topProgramsTitle.textContent = summaryBoxTitle('Programs', programs);
+  if (topMarketsTitle) topMarketsTitle.textContent = summaryBoxTitle('Markets / Pools', markets);
+  if (topQuotesTitle) topQuotesTitle.textContent = summaryBoxTitle('Quote mints', quotes);
+}
 
 /** Vybe explorer: wallet links only (vybe.fyi supports wallets, not markets/programs/mints). */
 const VYBE_ACCOUNT = 'https://vybe.fyi/wallet/';
@@ -1357,6 +1373,7 @@ function renderTokenEmpty(): void {
 
 function renderSummaryEmpty(): void {
   summaryMeta.textContent = '—';
+  updateSummaryBoxTitles(0, 0, 0);
   topProgramsBody.innerHTML = buildTopProgramsPlaceholderRowsHtml();
   topMarketsBody.innerHTML = buildTopMarketsPlaceholderRowsHtml();
   topQuotesBody.innerHTML = buildTopQuotesPlaceholderRowsHtml();
@@ -1806,6 +1823,8 @@ async function renderSummaryFromTrades(trades: VybeTrade[]): Promise<void> {
         })
         .join('')
     : buildTopQuotesPlaceholderRowsHtml();
+
+  updateSummaryBoxTitles(programs.length, topMarketsWithPair.length, quotes.length);
 }
 
 function setTradesLoadedCount(el: HTMLElement, filtered: number, remote: number): void {

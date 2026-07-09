@@ -41,7 +41,7 @@
    npx pm2 start dist/server.js --name historical-trades
    ```
 
-7. **Optional: reverse proxy.** If you use Nginx/Caddy in front of the app, proxy `https://solana-historical-trade-data-api.dehghani.ca` to `http://127.0.0.1:3000`.
+7. **Optional: reverse proxy.** If you use Nginx/Caddy in front of the app, proxy `https://solana-trades-api.vybenetwork.com` to `http://127.0.0.1:3000`.
 
 **Quick one-off run (after clone + env):**
 ```bash

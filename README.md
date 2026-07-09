@@ -2,7 +2,7 @@
 
 This repository demonstrates how to use the Vybe Solana historical trade data API to fetch, filter, and analyze on-chain trade history for any Token-2022 or SPL token. It includes a production-ready Node.js backend and a modern frontend that show how to integrate Vybe’s /v4/trades and related endpoints to explore programs, markets, quote mints, wallets, and per-quote spam filters, with CSV export for downstream analysis.
 
-Try the live demo: https://solana-historical-trade-data-api.vybenetwork.com
+Try the live demo: https://solana-trades-api.vybenetwork.com
 
 Use this project as a reference implementation or starter kit for building Solana trade explorers, execution and flow analytics dashboards, and on-chain data products powered by Vybe’s high-performance Solana historical trade data API.
 
@@ -15,7 +15,7 @@ Use this project as a reference implementation or starter kit for building Solan
 
 ---
 
-**[Try the LIVE demo →](https://solana-historical-trade-data-api.vybenetwork.com)**  
+**[Try the LIVE demo →](https://solana-trades-api.vybenetwork.com)**  
 
 **[Get your free Vybe API key →](https://vybe.fyi/api-pricing)**  
 

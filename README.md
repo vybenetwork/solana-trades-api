@@ -7,7 +7,6 @@
 [![Historical trades guide](https://img.shields.io/badge/Guides-Fetch%20historical%20trades-3b82f6?style=for-the-badge&logo=gitbook&logoColor=white)](https://docs.vybenetwork.com/docs/fetch-historical-trades)
 [![Historical trades API](https://img.shields.io/badge/Endpoint-Historical%20trades-6366f1?style=for-the-badge&logo=swagger&logoColor=white)](https://docs.vybenetwork.com/reference/get_trade_data_program_v4)
 [![X](https://img.shields.io/badge/X-Vybe__Network-000000?style=for-the-badge&logo=x)](https://x.com/Vybe_Network)
-[![Telegram](https://img.shields.io/badge/Telegram-VybeNetwork-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/VybeNetwork_Official)
 </p>
 
 This repository demonstrates how to use the Vybe Solana historical trade data API to fetch, filter, and analyze on-chain trade history for any Token-2022 or SPL token. It includes a production-ready Node.js backend and a modern frontend that show how to integrate Vybe’s /v4/trades and related endpoints to explore programs, markets, quote mints, wallets, and per-quote spam filters, with CSV export for downstream analysis.
@@ -436,6 +435,5 @@ blockTime,price,baseSize,quoteSize,marketAddress,signature
 
 ## Support
 
-- **Telegram:** [Vybe community](https://t.me/vybenetwork)
 - **Support ticket:** [Submit a ticket via vybenetwork.xyz](https://vybenetwork.com)
 

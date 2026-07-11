@@ -4,7 +4,7 @@
 
 2. **Clone or pull the repo** (use your branch; adjust path if needed):
    ```bash
-   git clone https://github.com/vybenetwork/solana-historical-trade-data-api.git
+   git clone https://github.com/vybenetwork/solana-trades-api.git
    cd solana-historical-trade-data-api
    git checkout feat/ts-base-trades-ui
    ```

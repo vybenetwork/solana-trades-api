@@ -2,11 +2,11 @@
 
 <p align="center">
 
-[![Demo](https://img.shields.io/badge/Demo-Live%20app-22c55e?style=for-the-badge&logo=googlechrome&logoColor=white)](https://solana-trades-api.vybenetwork.com)
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/vybenetwork/solana-historical-trade-data-api)
-[![Telegram](https://img.shields.io/badge/Telegram-VybeNetwork-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/VybeNetwork_Official)
+[![Demo](https://img.shields.io/badge/Demo-Solana%20Trades%20API%20live%20app-22c55e?style=for-the-badge&logo=googlechrome&logoColor=white)](https://solana-trades-api.vybenetwork.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-1f6feb?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vybenetwork/solana-historical-trade-data-api)
 [![X](https://img.shields.io/badge/X-Vybe__Network-000000?style=for-the-badge&logo=x)](https://x.com/Vybe_Network)
 
+[![Telegram](https://img.shields.io/badge/Telegram-VybeNetwork-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/VybeNetwork_Official)
 </p>
 
 This repository demonstrates how to use the Vybe Solana historical trade data API to fetch, filter, and analyze on-chain trade history for any Token-2022 or SPL token. It includes a production-ready Node.js backend and a modern frontend that show how to integrate Vybe’s /v4/trades and related endpoints to explore programs, markets, quote mints, wallets, and per-quote spam filters, with CSV export for downstream analysis.

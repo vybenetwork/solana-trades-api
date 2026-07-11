@@ -4,6 +4,8 @@
 
 [![Demo](https://img.shields.io/badge/Demo-Solana%20Trades%20API%20live%20app-c2410c?style=for-the-badge&logo=googlechrome&logoColor=white)](https://solana-trades-api.vybenetwork.com)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-5b21b6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vybenetwork/solana-trades-api)
+[![Historical trades guide](https://img.shields.io/badge/Guides-Fetch%20historical%20trades-3b82f6?style=for-the-badge&logo=gitbook&logoColor=white)](https://docs.vybenetwork.com/docs/fetch-historical-trades)
+[![Historical trades API](https://img.shields.io/badge/Endpoint-Historical%20trades-6366f1?style=for-the-badge&logo=swagger&logoColor=white)](https://docs.vybenetwork.com/reference/get_trade_data_program_v4)
 [![X](https://img.shields.io/badge/X-Vybe__Network-000000?style=for-the-badge&logo=x)](https://x.com/Vybe_Network)
 [![Telegram](https://img.shields.io/badge/Telegram-VybeNetwork-26A5E4?style=for-the-badge&logo=telegram)](https://t.me/VybeNetwork_Official)
 </p>

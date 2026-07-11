@@ -435,5 +435,6 @@ blockTime,price,baseSize,quoteSize,marketAddress,signature
 
 ## Support
 
+- **Telegram:** [Vybe community](https://t.me/vybenetwork)
 - **Support ticket:** [Submit a ticket via vybenetwork.xyz](https://vybenetwork.com)
 

@@ -19,3 +19,4 @@ npm
 # Persistent caches (read/write at request time)
 data/
 
+.env.backup*

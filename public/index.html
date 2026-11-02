@@ -2,7 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1180" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      @media (max-width: 1179px) {
+        html {
+          zoom: calc(100vw / 1400);
+          background: #070708;
+          text-size-adjust: 100%;
+          -webkit-text-size-adjust: 100%;
+        }
+      }
+    </style>
     <title>Solana Trades API</title>
     <meta name="description" content="Query and export historical Solana trades with the Vybe Solana API: SPL and Token-2022 filters for programs, markets, quote mints, wallets and CSV exports." />
     <meta name="keywords" content="Solana historical trades, trade history API, Vybe API, SPL token, Token-2022, CSV export, DEX trades, trade explorer, on-chain analytics" />

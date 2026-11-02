@@ -2,7 +2,7 @@
 
 <p align="center">
 
-[![Demo](https://img.shields.io/badge/Demo-Solana%20Trades%20API%20live%20app-c2410c?style=for-the-badge&logo=googlechrome&logoColor=white)](https://solana-trades-api.vybenetwork.com)
+[![Demo](https://img.shields.io/badge/Demo-Solana%20Trades%20API%20live%20app-c2410c?style=for-the-badge&logo=googlechrome&logoColor=white)](https://solana-trades-api.vybenetwork.com?utm_source=trades-api-readme&utm_medium=referral)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-5b21b6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vybenetwork/solana-trades-api)
 [![Historical trades guide](https://img.shields.io/badge/Guides-Fetch%20historical%20trades-3b82f6?style=for-the-badge&logo=gitbook&logoColor=white)](https://docs.vybenetwork.com/docs/fetch-historical-trades)
 [![Historical trades API](https://img.shields.io/badge/Endpoint-Historical%20trades-6366f1?style=for-the-badge&logo=swagger&logoColor=white)](https://docs.vybenetwork.com/reference/get_trade_data_program_v4)
@@ -12,7 +12,7 @@
 
 This repository demonstrates how to use the Vybe Solana historical trade data API to fetch, filter, and analyze on-chain trade history for any Token-2022 or SPL token. It includes a production-ready Node.js backend and a modern frontend that show how to integrate Vybe’s /v4/trades and related endpoints to explore programs, markets, quote mints, wallets, and per-quote spam filters, with CSV export for downstream analysis.
 
-Try the live demo: https://solana-trades-api.vybenetwork.com
+Try the live demo: [`https://solana-trades-api.vybenetwork.com`](https://solana-trades-api.vybenetwork.com?utm_source=trades-api-readme&utm_medium=referral)
 
 Use this project as a reference implementation or starter kit for building Solana trade explorers, execution and flow analytics dashboards, and on-chain data products powered by Vybe’s high-performance Solana historical trade data API.
 
@@ -25,7 +25,7 @@ Use this project as a reference implementation or starter kit for building Solan
 
 ---
 
-**[Try the LIVE demo →](https://solana-trades-api.vybenetwork.com)**  
+**[Try the LIVE demo →](https://solana-trades-api.vybenetwork.com?utm_source=trades-api-readme&utm_medium=referral)**  
 
 **[Get your free Vybe API key →](https://vybe.fyi/api-pricing?utm_source=trades-api-readme&utm_medium=referral)**  
 

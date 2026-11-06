@@ -2,10 +2,26 @@
 
 > Query and export historical Solana trades with the Vybe Solana API: SPL and Token-2022 filters for programs, markets, quote mints, wallets and CSV exports.
 
-Live demo of the Vybe Solana API. The linked docs pages are the Markdown versions.
+This is a free demo that showcases the Vybe trades endpoints. Open it in the browser to test and demo them. Nothing to install. The linked docs pages are the Markdown versions.
+
+## What this demo shows
+Filter Solana trades by mint, wallet, program, market, or quote mint, then page the rows and export the loaded set as CSV. Programs are labeled, and wallets can match holder names.
+
+- Trade filters: mint, wallet, program, market, and quote mint narrow the query.
+- Program labels: program addresses in the rows are matched to known account labels.
+- Holder names: wallets in the trades can take a name from that mint's top holders.
+- CSV export: the trades loaded for the current filters export as CSV.
+
+## Endpoints this demo calls
+- Historical Trades API: `GET /v4/trades`
+- Token Details API: `GET /v4/tokens/{mintAddress}`
+- Top Token Holders API: `GET /v4/tokens/{mintAddress}/top-holders`
+- Labeled Programs API: `GET /v4/programs/labeled-program-accounts`
+
+The demo page is free to use. Historical Trades is on the Free plan, the lowest tier. A free API key starts the first calls. Paid plans raise the rate limit.
 
 ## Demo
-- [Solana Trades API](https://solana-trades-api.vybenetwork.com/): Query and export historical Solana trades with the Vybe Solana API: SPL and Token-2022 filters for programs, markets, quote mints, wallets and CSV exports.
+- [Solana Trades API](https://solana-trades-api.vybenetwork.com/): Free browser demo of the trades endpoints. Filter, page, and export historical trades.
 
 ## Docs
 - [Fetch Historical Trades](https://docs.vybenetwork.com/docs/fetch-historical-trades.md)
